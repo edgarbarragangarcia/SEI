@@ -36,6 +36,10 @@ const TableSkeleton = () => (
   </div>
 );
 
+// The user already published the sheet, so we can use the public CSV URL.
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2Z3R4D5e6f_3YJ3X7f8a9g0j1l_kL8wPzO8n_yB-V8sN_kG9jX7wPzN3lI-hQ/pub?gid=0&single=true&output=csv";
+
+
 export function SheetSyncDashboard() {
   const [isFetching, setIsFetching] = useState(false);
   const [sheetData, setSheetData] = useState<Record<string, any>[] | null>(
@@ -44,23 +48,13 @@ export function SheetSyncDashboard() {
   const [tableHeaders, setTableHeaders] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
-  const [sheetUrl, setSheetUrl] = useState("");
-
+  
   const handleFetchData = async () => {
-    if (!sheetUrl) {
-      toast({
-        title: "URL no configurada",
-        description: "Por favor, pega la URL de tu hoja de cálculo publicada.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsFetching(true);
     setSheetData(null);
     setTableHeaders([]);
 
-    const result = await getSheetData(sheetUrl);
+    const result = await getSheetData(SHEET_URL);
 
     if (result.error) {
       toast({
@@ -84,9 +78,9 @@ export function SheetSyncDashboard() {
     if (!user || !user.sucursal || user.role === 'Admin' || data.length === 0) {
       return data;
     }
-
+  
     const sucursalHeader = Object.keys(data[0] || {}).find(
-      (header) => header.toLowerCase() === 'sucursal'
+      (header) => header.trim().toLowerCase() === 'sucursal'
     );
   
     if (!sucursalHeader) {
@@ -98,11 +92,11 @@ export function SheetSyncDashboard() {
       return data;
     }
   
-    const userSucursal = user.sucursal.toLowerCase();
+    const userSucursal = user.sucursal.trim().toLowerCase();
     
     return data.filter(row => {
       const rowSucursal = row[sucursalHeader];
-      return rowSucursal && typeof rowSucursal === 'string' && rowSucursal.toLowerCase() === userSucursal;
+      return rowSucursal && typeof rowSucursal === 'string' && rowSucursal.trim().toLowerCase() === userSucursal;
     });
   };
 
@@ -157,16 +151,6 @@ export function SheetSyncDashboard() {
                 </Button>
                 </div>
             </div>
-             <div className="mt-4 space-y-2">
-                <Label htmlFor="sheet-url">URL de la Hoja de Cálculo (CSV)</Label>
-                <Input 
-                    id="sheet-url"
-                    type="url" 
-                    placeholder="Pega la URL de tu CSV publicado aquí"
-                    value={sheetUrl}
-                    onChange={(e) => setSheetUrl(e.target.value)}
-                />
-            </div>
           </CardHeader>
           <CardContent>
             {isFetching ? (
@@ -214,7 +198,7 @@ export function SheetSyncDashboard() {
                   Los datos de tu hoja de cálculo aparecerán aquí.
                 </p>
                 <p className="text-sm">
-                  Pega la URL publicada y presiona "Consultar Datos" para empezar.
+                  Presiona "Consultar Datos" para empezar.
                 </p>
               </div>
             )}
