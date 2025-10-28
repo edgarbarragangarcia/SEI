@@ -21,7 +21,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Table2, RefreshCw } from "lucide-react";
 
 const sucursalMapping: { [key: string]: string } = {
   "Supplier A": "AGUASCALIENTES",
@@ -44,7 +45,7 @@ const TableSkeleton = () => (
 );
 
 export function SheetSyncDashboard() {
-  const [isFetching, setIsFetching] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [sheetData, setSheetData] = useState<Record<string, any>[] | null>(
     null
   );
@@ -52,37 +53,32 @@ export function SheetSyncDashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  useEffect(() => {
-    async function fetchInitialData() {
-      const sheetUrl = "https://docs.google.com/spreadsheets/d/1sRAgbsDii4x9lUmhkhjqwkgj9jx8MiWndXbWSn3H9co/edit?gid=0#gid=0";
-      
-      setIsFetching(true);
-      setSheetData(null);
-      setTableHeaders([]);
+  const handleFetchData = async () => {
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/1sRAgbsDii4x9lUmhkhjqwkgj9jx8MiWndXbWSn3H9co/edit?gid=0#gid=0";
+    
+    setIsFetching(true);
+    setSheetData(null);
+    setTableHeaders([]);
 
-      const result = await getSheetData(sheetUrl);
+    const result = await getSheetData(sheetUrl);
 
-      if (result.error) {
-        toast({
-          title: "Error al obtener los datos",
-          description: result.error,
-          variant: "destructive",
-        });
-      } else if (result.data) {
-        processAndSetData(result.data);
-        toast({
-          title: "¡Éxito!",
-          description: "Los datos de tu hoja se han cargado.",
-          className:
-            "bg-accent text-accent-foreground border-green-300 dark:border-green-700",
-        });
-      }
-      setIsFetching(false);
+    if (result.error) {
+      toast({
+        title: "Error al obtener los datos",
+        description: result.error,
+        variant: "destructive",
+      });
+    } else if (result.data) {
+      processAndSetData(result.data);
+      toast({
+        title: "¡Éxito!",
+        description: "Los datos de tu hoja se han cargado.",
+        className:
+          "bg-accent text-accent-foreground border-green-300 dark:border-green-700",
+      });
     }
-
-    fetchInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setIsFetching(false);
+  };
 
   const filterDataBySucursal = (data: Record<string, any>[]) => {
     if (!user || !user.sucursal || user.role === 'Admin') {
@@ -121,13 +117,19 @@ export function SheetSyncDashboard() {
     <div className="container mx-auto py-8 px-4 md:px-6 w-full">
       <div className="space-y-8">
         <Card className="shadow-lg min-h-[400px]">
-          <CardHeader>
-            <CardTitle>Datos de Inventario</CardTitle>
-            <CardDescription>
-              {`Mostrando datos para ${
-                user?.role === "Admin" ? "todas las sucursales" : user?.sucursal
-              }.`}
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="space-y-1.5">
+              <CardTitle>Datos de Inventario</CardTitle>
+              <CardDescription>
+                {`Mostrando datos para ${
+                  user?.role === "Admin" ? "todas las sucursales" : user?.sucursal
+                }.`}
+              </CardDescription>
+            </div>
+            <Button onClick={handleFetchData} disabled={isFetching}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              Consultar Datos
+            </Button>
           </CardHeader>
           <CardContent>
             {isFetching ? (
@@ -169,7 +171,7 @@ export function SheetSyncDashboard() {
                   Los datos de tu hoja de cálculo aparecerán aquí.
                 </p>
                 <p className="text-sm">
-                  Cargando datos automáticamente...
+                  Presiona "Consultar Datos" para empezar.
                 </p>
               </div>
             )}
