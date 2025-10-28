@@ -37,7 +37,7 @@ const TableSkeleton = () => (
 );
 
 // The user already published the sheet, so we can use the public CSV URL.
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2Z3R4D5e6f_3YJ3X7f8a9g0j1l_kL8wPzO8n_yB-V8sN_kG9jX7wPzN3lI-hQ/pub?gid=1532422770&single=true&output=csv";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2Z3R4D5e6f_3YJ3X7f8a9g0j1l_kL8wPzO8n_yB-V8sN_kG9jX7wPzN3lI-hQ/pub?gid=1247634128&single=true&output=csv";
 
 
 export function SheetSyncDashboard() {
