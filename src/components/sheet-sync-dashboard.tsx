@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Table2, RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Table2, RefreshCw, Save } from "lucide-react";
 
 const TableSkeleton = () => (
   <div className="space-y-2">
@@ -71,20 +72,21 @@ export function SheetSyncDashboard() {
   };
 
   const filterDataBySucursal = (data: Record<string, any>[]) => {
-    if (!user || !user.sucursal || user.role === 'Admin') {
+    if (!user || !user.sucursal || user.role === 'Admin' || data.length === 0) {
       return data;
     }
-  
-    // Find the header for 'sucursal' case-insensitively
+
     const sucursalHeader = Object.keys(data[0] || {}).find(
       (header) => header.toLowerCase() === 'sucursal'
     );
   
     if (!sucursalHeader) {
-      // If no 'sucursal' column is found, return no data for non-admins
-      // or you could return all data if that's preferred.
-      // Returning empty array to make it clear filtering is failing.
-      return [];
+      toast({
+        title: "Advertencia de filtro",
+        description: "No se encontró la columna 'Sucursal' en los datos. Mostrando todos los resultados.",
+        variant: "default",
+      });
+      return data;
     }
   
     const userSucursal = user.sucursal.toLowerCase();
@@ -101,37 +103,57 @@ export function SheetSyncDashboard() {
     if (filteredData.length > 0) {
       setTableHeaders(Object.keys(filteredData[0]));
     } else if (data.length > 0) {
-      // If filtering results in empty data, still show headers from original data
       setTableHeaders(Object.keys(data[0]));
     }
+  };
+  
+  const handleInputChange = (value: string, rowIndex: number, header: string) => {
+    if (!sheetData) return;
+    const updatedData = [...sheetData];
+    updatedData[rowIndex][header] = value;
+    setSheetData(updatedData);
+  };
+
+  const handleSaveChanges = () => {
+    // TODO: Implement the API call to save data back to Google Sheets.
+    toast({
+      title: "Función no implementada",
+      description: "Guardar los cambios en Google Sheets aún no está disponible.",
+    });
   };
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 w-full">
       <div className="space-y-8">
         <Card className="shadow-lg min-h-[400px]">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1.5">
               <CardTitle>Datos de Inventario</CardTitle>
               <CardDescription>
                 {`Mostrando datos para ${
                   user?.role === "Admin" ? "todas las sucursales" : user?.sucursal
-                }.`}
+                }. Las celdas son editables.`}
               </CardDescription>
             </div>
-            <Button onClick={handleFetchData} disabled={isFetching}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-              Consultar Datos
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleFetchData} disabled={isFetching}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                Consultar Datos
+              </Button>
+              <Button onClick={handleSaveChanges} disabled={!sheetData || sheetData.length === 0}>
+                <Save className="mr-2 h-4 w-4" />
+                Guardar Cambios
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isFetching ? (
               <TableSkeleton />
             ) : sheetData ? (
               sheetData.length > 0 ? (
-                <div className="relative w-full overflow-auto rounded-md border">
+                <div className="relative w-full overflow-auto rounded-md border" style={{maxHeight: "60vh"}}>
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-card">
                       <TableRow>
                         {tableHeaders.map((header) => (
                           <TableHead key={header}>{header}</TableHead>
@@ -142,8 +164,13 @@ export function SheetSyncDashboard() {
                       {sheetData.map((row, rowIndex) => (
                         <TableRow key={rowIndex}>
                           {tableHeaders.map((header) => (
-                            <TableCell key={`${rowIndex}-${header}`}>
-                              {row[header]}
+                            <TableCell key={`${rowIndex}-${header}`} className="p-1">
+                              <Input
+                                type="text"
+                                value={row[header] || ""}
+                                onChange={(e) => handleInputChange(e.target.value, rowIndex, header)}
+                                className="w-full h-8 border-transparent hover:border-input focus:border-ring"
+                              />
                             </TableCell>
                           ))}
                         </TableRow>
