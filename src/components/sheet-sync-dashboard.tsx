@@ -24,16 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Table2, RefreshCw } from "lucide-react";
 
-const sucursalMapping: { [key: string]: string } = {
-  "Supplier A": "AGUASCALIENTES",
-  "Supplier B": "TOLUCA",
-  "Supplier C": "CIUDAD DE MEXICO",
-  "Supplier D": "GUADALAJARA",
-  "Supplier E": "HERMOSILLO",
-  "Supplier F": "MONTERREY",
-  "Supplier G": "TIJUANA",
-};
-
 const TableSkeleton = () => (
   <div className="space-y-2">
     <Skeleton className="h-12 w-full" />
@@ -84,22 +74,25 @@ export function SheetSyncDashboard() {
     if (!user || !user.sucursal || user.role === 'Admin') {
       return data;
     }
-    const filteredData = data.filter(row => {
-      // Assuming there is a column that can be mapped to a sucursal
-      // This part is highly dependent on the actual data structure
-      // We'll use the sucursalMapping as an example
-      const sucursalKey = Object.keys(sucursalMapping).find(key => sucursalMapping[key] === user.sucursal);
-      if (sucursalKey && row.Supplier === sucursalKey) {
-        return true;
-      }
-      // Fallback for direct sucursal name match
-      if (row.Sucursal === user.sucursal || row.sucursal === user.sucursal) {
-        return true;
-      }
-      return false;
+  
+    // Find the header for 'sucursal' case-insensitively
+    const sucursalHeader = Object.keys(data[0] || {}).find(
+      (header) => header.toLowerCase() === 'sucursal'
+    );
+  
+    if (!sucursalHeader) {
+      // If no 'sucursal' column is found, return no data for non-admins
+      // or you could return all data if that's preferred.
+      // Returning empty array to make it clear filtering is failing.
+      return [];
+    }
+  
+    const userSucursal = user.sucursal.toLowerCase();
+    
+    return data.filter(row => {
+      const rowSucursal = row[sucursalHeader];
+      return rowSucursal && typeof rowSucursal === 'string' && rowSucursal.toLowerCase() === userSucursal;
     });
-
-    return filteredData;
   };
 
   const processAndSetData = (data: Record<string, any>[]) => {
