@@ -7,10 +7,11 @@ import credentials from '@/lib/google-credentials.json';
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 
 function getJwtClient() {
+  const privateKey = credentials.private_key.replace(/\\n/g, '\n');
   return new google.auth.JWT(
     credentials.client_email,
     undefined,
-    credentials.private_key,
+    privateKey,
     SCOPES
   );
 }
