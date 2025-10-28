@@ -33,7 +33,7 @@ import { Loader2, Table2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const formSchema = z.object({
-  sheetUrl: z.string().url({ message: "Please enter a valid Google Sheet URL." }),
+  sheetUrl: z.string().url({ message: "Por favor, introduce una URL de Google Sheet válida." }),
 });
 
 const sucursalMapping: { [key: string]: string } = {
@@ -96,15 +96,15 @@ export function SheetSyncDashboard() {
 
     if (result.error) {
       toast({
-        title: "Error fetching data",
+        title: "Error al obtener los datos",
         description: result.error,
         variant: "destructive",
       });
     } else if (result.data) {
       processAndSetData(result.data);
       toast({
-        title: "Success!",
-        description: "Your sheet data has been loaded.",
+        title: "¡Éxito!",
+        description: "Los datos de tu hoja se han cargado.",
         className: "bg-accent text-accent-foreground border-green-300 dark:border-green-700",
       });
     }
@@ -125,7 +125,7 @@ export function SheetSyncDashboard() {
       try {
         const rows = text.split('\n').filter(row => row.trim() !== '');
         if (rows.length === 0) {
-          throw new Error("CSV file is empty.");
+          throw new Error("El archivo CSV está vacío.");
         }
         
         const headers = rows[0].split(',').map(h => h.trim());
@@ -139,15 +139,15 @@ export function SheetSyncDashboard() {
 
         processAndSetData(data);
         toast({
-          title: "Success!",
-          description: "Your CSV data has been loaded.",
+          title: "¡Éxito!",
+          description: "Tus datos CSV han sido cargados.",
           className: "bg-accent text-accent-foreground border-green-300 dark:border-green-700",
         });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during parsing.";
+        const errorMessage = error instanceof Error ? error.message : "Ocurrió un error desconocido durante el análisis.";
         toast({
-          title: "Error parsing CSV",
-          description: `Failed to parse CSV file. Please check the format. ${errorMessage}`,
+          title: "Error al analizar el CSV",
+          description: `No se pudo analizar el archivo CSV. Por favor, comprueba el formato. ${errorMessage}`,
           variant: "destructive",
         });
         setSheetData(null);
@@ -158,8 +158,8 @@ export function SheetSyncDashboard() {
     };
     reader.onerror = () => {
         toast({
-            title: "Error reading file",
-            description: "Could not read the selected file.",
+            title: "Error al leer el archivo",
+            description: "No se pudo leer el archivo seleccionado.",
             variant: "destructive",
         });
         setIsFetching(false);
@@ -172,15 +172,15 @@ export function SheetSyncDashboard() {
       <div className="space-y-8">
         <Tabs defaultValue="google-sheet" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="google-sheet">Google Sheet URL</TabsTrigger>
-            <TabsTrigger value="csv-upload">Upload CSV</TabsTrigger>
+            <TabsTrigger value="google-sheet">URL de Google Sheet</TabsTrigger>
+            <TabsTrigger value="csv-upload">Subir CSV</TabsTrigger>
           </TabsList>
           <TabsContent value="google-sheet">
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle>Connect a Google Sheet</CardTitle>
+                <CardTitle>Conectar una Google Sheet</CardTitle>
                 <CardDescription>
-                  Paste the URL of your Google Sheet below to fetch and display its data.
+                  Pega la URL de tu Google Sheet a continuación para obtener y mostrar sus datos.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -191,12 +191,12 @@ export function SheetSyncDashboard() {
                       name="sheetUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Sheet URL</FormLabel>
+                          <FormLabel>URL de la Hoja</FormLabel>
                           <FormControl>
                             <Input placeholder="https://docs.google.com/spreadsheets/d/..." {...field} />
                           </FormControl>
                           <FormDescription>
-                            Make sure your sheet is public or accessible to the service.
+                            Asegúrate de que tu hoja sea pública o accesible para la cuenta de servicio.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -204,7 +204,7 @@ export function SheetSyncDashboard() {
                     />
                     <Button type="submit" disabled={isFetching}>
                       {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {isFetching ? "Fetching Data..." : "Get Sheet Data"}
+                      {isFetching ? "Obteniendo datos..." : "Obtener datos de la Hoja"}
                     </Button>
                   </form>
                 </Form>
@@ -215,20 +215,20 @@ export function SheetSyncDashboard() {
             <Form {...form}>
                 <Card className="shadow-lg">
                     <CardHeader>
-                        <CardTitle>Upload a CSV File</CardTitle>
+                        <CardTitle>Subir un archivo CSV</CardTitle>
                         <CardDescription>
-                        Select a CSV file from your computer to load the data directly.
+                        Selecciona un archivo CSV de tu computadora para cargar los datos directamente.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             <FormItem>
-                                <FormLabel>CSV File</FormLabel>
+                                <FormLabel>Archivo CSV</FormLabel>
                                 <FormControl>
                                     <Input id="csv-file" type="file" accept=".csv" onChange={handleCsvUpload} disabled={isFetching} />
                                 </FormControl>
                                 <FormDescription>
-                                    The first row of the CSV should contain the headers.
+                                    La primera fila del CSV debe contener las cabeceras.
                                 </FormDescription>
                             </FormItem>
                         </div>
@@ -240,9 +240,9 @@ export function SheetSyncDashboard() {
 
         <Card className="shadow-lg min-h-[300px]">
           <CardHeader>
-            <CardTitle>Sheet Data</CardTitle>
+            <CardTitle>Datos de la Hoja</CardTitle>
             <CardDescription>
-              {`Displaying data for ${user?.role === 'Admin' ? 'all branches' : user?.sucursal}.`}
+              {`Mostrando datos para ${user?.role === 'Admin' ? 'todas las sucursales' : user?.sucursal}.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -274,14 +274,14 @@ export function SheetSyncDashboard() {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-10">
-                  No data available for your branch or the file is empty.
+                  No hay datos disponibles para tu sucursal o el archivo está vacío.
                 </p>
               )
             ) : (
                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-10">
                     <Table2 className="h-12 w-12 mb-4" />
-                    <p className="font-semibold">Your data will appear here</p>
-                    <p className="text-sm">Enter a sheet URL or upload a CSV to get started.</p>
+                    <p className="font-semibold">Tus datos aparecerán aquí</p>
+                    <p className="text-sm">Introduce una URL o sube un CSV para empezar.</p>
                 </div>
             )}
           </CardContent>
