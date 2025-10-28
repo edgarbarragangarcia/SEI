@@ -187,27 +187,29 @@ export function SheetSyncDashboard() {
             </Card>
           </TabsContent>
           <TabsContent value="csv-upload">
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle>Upload a CSV File</CardTitle>
-                    <CardDescription>
-                    Select a CSV file from your computer to load the data directly.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        <FormItem>
-                            <FormLabel>CSV File</FormLabel>
-                            <FormControl>
-                                <Input id="csv-file" type="file" accept=".csv" onChange={handleCsvUpload} disabled={isFetching} />
-                            </FormControl>
-                            <FormDescription>
-                                The first row of the CSV should contain the headers.
-                            </FormDescription>
-                        </FormItem>
-                    </div>
-                </CardContent>
-            </Card>
+            <Form {...form}>
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle>Upload a CSV File</CardTitle>
+                        <CardDescription>
+                        Select a CSV file from your computer to load the data directly.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <FormItem>
+                                <FormLabel>CSV File</FormLabel>
+                                <FormControl>
+                                    <Input id="csv-file" type="file" accept=".csv" onChange={handleCsvUpload} disabled={isFetching} />
+                                </FormControl>
+                                <FormDescription>
+                                    The first row of the CSV should contain the headers.
+                                </FormDescription>
+                            </FormItem>
+                        </div>
+                    </CardContent>
+                </Card>
+            </Form>
           </TabsContent>
         </Tabs>
 
