@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getSheetData } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -43,15 +43,26 @@ export function SheetSyncDashboard() {
   const [tableHeaders, setTableHeaders] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
+  const [sheetUrl, setSheetUrl] = useState("");
 
   const handleFetchData = async () => {
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/1sRAgbsDii4x9lUmhkhjqwkgj9jx8MiWndXbWSn3H9co/edit?gid=0#gid=0";
+    // Replace this URL with the one you get from "Publish to the web"
+    const publishedCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5gY4s5tY6yXJ2cZ6b8X9a9f8c7g6e5d4c3b2a1/pub?gid=0&single=true&output=csv";
     
+    if (!publishedCsvUrl) {
+      toast({
+        title: "URL no configurada",
+        description: "Por favor, publica tu hoja de cálculo y pega la URL en el código.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsFetching(true);
     setSheetData(null);
     setTableHeaders([]);
 
-    const result = await getSheetData(sheetUrl);
+    const result = await getSheetData(publishedCsvUrl);
 
     if (result.error) {
       toast({
@@ -60,7 +71,7 @@ export function SheetSyncDashboard() {
         variant: "destructive",
       });
     } else if (result.data) {
-      processAndSetData(result.data);
+      processAndSetData(result.data as Record<string, any>[]);
       toast({
         title: "¡Éxito!",
         description: "Los datos de tu hoja se han cargado.",
@@ -115,10 +126,11 @@ export function SheetSyncDashboard() {
   };
 
   const handleSaveChanges = () => {
-    // TODO: Implement the API call to save data back to Google Sheets.
+    // This functionality is disabled because publishing to web is read-only
     toast({
-      title: "Función no implementada",
-      description: "Guardar los cambios en Google Sheets aún no está disponible.",
+      title: "Función no disponible",
+      description: "La edición no está disponible cuando se carga desde una URL pública.",
+      variant: "destructive",
     });
   };
 
@@ -132,7 +144,7 @@ export function SheetSyncDashboard() {
               <CardDescription>
                 {`Mostrando datos para ${
                   user?.role === "Admin" ? "todas las sucursales" : user?.sucursal
-                }. Las celdas son editables.`}
+                }. Carga rápida desde CSV.`}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -140,7 +152,7 @@ export function SheetSyncDashboard() {
                 <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
                 Consultar Datos
               </Button>
-              <Button onClick={handleSaveChanges} disabled={!sheetData || sheetData.length === 0}>
+              <Button onClick={handleSaveChanges} disabled={true}>
                 <Save className="mr-2 h-4 w-4" />
                 Guardar Cambios
               </Button>
@@ -170,6 +182,7 @@ export function SheetSyncDashboard() {
                                 value={row[header] || ""}
                                 onChange={(e) => handleInputChange(e.target.value, rowIndex, header)}
                                 className="w-full h-8 border-transparent hover:border-input focus:border-ring"
+                                readOnly // Cells are read-only with this method
                               />
                             </TableCell>
                           ))}
