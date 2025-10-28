@@ -12,10 +12,10 @@ const useFirebaseAuth = (): AuthContextType => {
 
 const useMockAuth = (): AuthContextType => {
   const mockUser: User = {
-    uid: 'mock-user-id',
-    email: 'test@example.com',
-    displayName: 'Test User',
-    photoURL: 'https://picsum.photos/seed/1/200/200',
+    uid: 'mock-user-id-2',
+    email: 'carlos.martinez@example.com',
+    displayName: 'Carlos Martinez',
+    photoURL: 'https://i.pravatar.cc/150?u=user-2',
     emailVerified: true,
     isAnonymous: false,
     metadata: {},
@@ -36,8 +36,8 @@ const useMockAuth = (): AuthContextType => {
     reload: async () => {},
     toJSON: () => ({}),
     // New fields for role and branch
-    role: 'Admin',
-    sucursal: 'AGUASCALIENTES',
+    role: 'User',
+    sucursal: 'TOLUCA',
   };
 
   return {
