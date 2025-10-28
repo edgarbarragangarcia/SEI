@@ -1,61 +1,68 @@
 
 'use server';
 
-const mockData = [
-    {
-      "ProductID": "P001",
-      "ProductName": "Laptop",
-      "Category": "Electronics",
-      "Price": 1200,
-      "Stock": 50,
-      "Supplier": "Supplier A"
-    },
-    {
-      "ProductID": "P002",
-      "ProductName": "Smartphone",
-      "Category": "Electronics",
-      "Price": 800,
-      "Stock": 150,
-      "Supplier": "Supplier B"
-    },
-    {
-      "ProductID": "P003",
-      "ProductName": "Office Chair",
-      "Category": "Furniture",
-      "Price": 150,
-      "Stock": 300,
-      "Supplier": "Supplier C"
-    },
-    {
-      "ProductID": "P004",
-      "ProductName": "Desk Lamp",
-      "Category": "Furniture",
-      "Price": 45,
-      "Stock": 500,
-      "Supplier": "Supplier D"
-    },
-    {
-      "ProductID": "P005",
-      "ProductName": "Notebook",
-      "Category": "Stationery",
-      "Price": 5,
-      "Stock": 1000,
-      "Supplier": "Supplier E"
-    }
-  ];
+import { google } from 'googleapis';
+import credentials from '@/lib/google-credentials.json';
+
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
+
+function getJwtClient() {
+  return new google.auth.JWT(
+    credentials.client_email,
+    undefined,
+    credentials.private_key,
+    SCOPES
+  );
+}
+
+function extractSheetIdFromUrl(url: string): string | null {
+    const match = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    return match ? match[1] : null;
+}
 
 export async function getSheetData(sheetUrl: string) {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    if (!sheetUrl.includes('docs.google.com/spreadsheets')) {
-      return { error: 'Invalid Google Sheet URL. Please provide a valid URL.' };
+    const sheetId = extractSheetIdFromUrl(sheetUrl);
+    if (!sheetId) {
+        return { error: 'Invalid Google Sheet URL. Could not extract Sheet ID.' };
     }
-    
-    return { data: mockData };
 
-  } catch (error) {
+    const auth = getJwtClient();
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    // Assume data is in a sheet named 'Sheet1' and the range covers columns A-Z.
+    // You might need to adjust this.
+    const range = 'Sheet1!A:Z';
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: range,
+    });
+
+    const rows = response.data.values;
+    if (!rows || rows.length === 0) {
+      return { data: [] };
+    }
+
+    const headers = rows[0] as string[];
+    const data = rows.slice(1).map(row => {
+      const rowData: Record<string, any> = {};
+      headers.forEach((header, index) => {
+        rowData[header] = row[index];
+      });
+      return rowData;
+    });
+
+    return { data };
+
+  } catch (error: any) {
     console.error("Error fetching sheet data:", error);
-    return { error: 'An unexpected error occurred while fetching data.' };
+    if (error.code === 403) {
+      return { error: 'Permission denied. Make sure the service account email has access to the Google Sheet.' };
+    }
+    if (error.code === 404) {
+        return { error: 'Sheet not found. Please check the URL and Sheet ID.'};
+    }
+    return { error: `An unexpected error occurred: ${error.message}` };
   }
 }
