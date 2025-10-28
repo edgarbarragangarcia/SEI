@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,7 +28,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Table2 } from "lucide-react";
+import { Loader2, Table2, FileUp } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const formSchema = z.object({
   sheetUrl: z.string().url({ message: "Please enter a valid Google Sheet URL." }),
@@ -84,49 +85,137 @@ export function SheetSyncDashboard() {
     setIsFetching(false);
   }
 
+  const handleCsvUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsFetching(true);
+    setSheetData(null);
+    setTableHeaders([]);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      try {
+        const rows = text.split('\n').filter(row => row.trim() !== '');
+        if (rows.length === 0) {
+          throw new Error("CSV file is empty.");
+        }
+        
+        const headers = rows[0].split(',').map(h => h.trim());
+        const data = rows.slice(1).map(row => {
+          const values = row.split(',').map(v => v.trim());
+          return headers.reduce((obj, header, index) => {
+            obj[header] = values[index];
+            return obj;
+          }, {} as Record<string, any>);
+        });
+
+        setTableHeaders(headers);
+        setSheetData(data);
+        toast({
+          title: "Success!",
+          description: "Your CSV data has been loaded.",
+          className: "bg-accent text-accent-foreground border-green-300 dark:border-green-700",
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during parsing.";
+        toast({
+          title: "Error parsing CSV",
+          description: `Failed to parse CSV file. Please check the format. ${errorMessage}`,
+          variant: "destructive",
+        });
+        setSheetData(null);
+        setTableHeaders([]);
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    reader.onerror = () => {
+        toast({
+            title: "Error reading file",
+            description: "Could not read the selected file.",
+            variant: "destructive",
+        });
+        setIsFetching(false);
+    }
+    reader.readAsText(file);
+  };
+
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 w-full">
       <div className="space-y-8">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Connect a Google Sheet</CardTitle>
-            <CardDescription>
-              Paste the URL of your Google Sheet below to fetch and display its data.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="sheetUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sheet URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://docs.google.com/spreadsheets/d/..." {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Make sure your sheet is public or accessible to the service.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isFetching}>
-                  {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isFetching ? "Fetching Data..." : "Get Sheet Data"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="google-sheet" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="google-sheet">Google Sheet URL</TabsTrigger>
+            <TabsTrigger value="csv-upload">Upload CSV</TabsTrigger>
+          </TabsList>
+          <TabsContent value="google-sheet">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Connect a Google Sheet</CardTitle>
+                <CardDescription>
+                  Paste the URL of your Google Sheet below to fetch and display its data.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="sheetUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sheet URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://docs.google.com/spreadsheets/d/..." {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Make sure your sheet is public or accessible to the service.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" disabled={isFetching}>
+                      {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isFetching ? "Fetching Data..." : "Get Sheet Data"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="csv-upload">
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>Upload a CSV File</CardTitle>
+                    <CardDescription>
+                    Select a CSV file from your computer to load the data directly.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <FormItem>
+                            <FormLabel>CSV File</FormLabel>
+                            <FormControl>
+                                <Input id="csv-file" type="file" accept=".csv" onChange={handleCsvUpload} disabled={isFetching} />
+                            </FormControl>
+                            <FormDescription>
+                                The first row of the CSV should contain the headers.
+                            </FormDescription>
+                        </FormItem>
+                    </div>
+                </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         <Card className="shadow-lg min-h-[300px]">
           <CardHeader>
             <CardTitle>Sheet Data</CardTitle>
             <CardDescription>
-              The data from your connected sheet is displayed below.
+              The data from your connected source is displayed below.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -158,14 +247,14 @@ export function SheetSyncDashboard() {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-10">
-                  The sheet appears to be empty or data could not be parsed.
+                  The file appears to be empty or data could not be parsed.
                 </p>
               )
             ) : (
                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-10">
                     <Table2 className="h-12 w-12 mb-4" />
                     <p className="font-semibold">Your data will appear here</p>
-                    <p className="text-sm">Enter a sheet URL above to get started.</p>
+                    <p className="text-sm">Enter a sheet URL or upload a CSV to get started.</p>
                 </div>
             )}
           </CardContent>
