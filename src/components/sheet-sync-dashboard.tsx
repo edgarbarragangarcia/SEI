@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table2, RefreshCw, Save } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 const TableSkeleton = () => (
   <div className="space-y-2">
@@ -46,13 +47,10 @@ export function SheetSyncDashboard() {
   const [sheetUrl, setSheetUrl] = useState("");
 
   const handleFetchData = async () => {
-    // Replace this URL with the one you get from "Publish to the web"
-    const publishedCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5gY4s5tY6yXJ2cZ6b8X9a9f8c7g6e5d4c3b2a1/pub?gid=0&single=true&output=csv";
-    
-    if (!publishedCsvUrl) {
+    if (!sheetUrl) {
       toast({
         title: "URL no configurada",
-        description: "Por favor, publica tu hoja de cálculo y pega la URL en el código.",
+        description: "Por favor, pega la URL de tu hoja de cálculo publicada.",
         variant: "destructive",
       });
       return;
@@ -62,7 +60,7 @@ export function SheetSyncDashboard() {
     setSheetData(null);
     setTableHeaders([]);
 
-    const result = await getSheetData(publishedCsvUrl);
+    const result = await getSheetData(sheetUrl);
 
     if (result.error) {
       toast({
@@ -138,24 +136,36 @@ export function SheetSyncDashboard() {
     <div className="container mx-auto py-8 px-4 md:px-6 w-full">
       <div className="space-y-8">
         <Card className="shadow-lg min-h-[400px]">
-          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1.5">
-              <CardTitle>Datos de Inventario</CardTitle>
-              <CardDescription>
-                {`Mostrando datos para ${
-                  user?.role === "Admin" ? "todas las sucursales" : user?.sucursal
-                }. Carga rápida desde CSV.`}
-              </CardDescription>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                <CardTitle>Datos de Inventario</CardTitle>
+                <CardDescription>
+                    {`Mostrando datos para ${
+                    user?.role === "Admin" ? "todas las sucursales" : user?.sucursal
+                    }. Carga rápida desde CSV.`}
+                </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                <Button onClick={handleFetchData} disabled={isFetching}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                    Consultar Datos
+                </Button>
+                <Button onClick={handleSaveChanges} disabled={true}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Guardar Cambios
+                </Button>
+                </div>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleFetchData} disabled={isFetching}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-                Consultar Datos
-              </Button>
-              <Button onClick={handleSaveChanges} disabled={true}>
-                <Save className="mr-2 h-4 w-4" />
-                Guardar Cambios
-              </Button>
+             <div className="mt-4 space-y-2">
+                <Label htmlFor="sheet-url">URL de la Hoja de Cálculo (CSV)</Label>
+                <Input 
+                    id="sheet-url"
+                    type="url" 
+                    placeholder="Pega la URL de tu CSV publicado aquí"
+                    value={sheetUrl}
+                    onChange={(e) => setSheetUrl(e.target.value)}
+                />
             </div>
           </CardHeader>
           <CardContent>
@@ -204,7 +214,7 @@ export function SheetSyncDashboard() {
                   Los datos de tu hoja de cálculo aparecerán aquí.
                 </p>
                 <p className="text-sm">
-                  Presiona "Consultar Datos" para empezar.
+                  Pega la URL publicada y presiona "Consultar Datos" para empezar.
                 </p>
               </div>
             )}
