@@ -15,8 +15,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { auth } from "@/lib/firebase";
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import { LogOut, User as UserIcon, LogIn, Building } from "lucide-react";
+import { LogOut, User as UserIcon, LogIn, Building, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export function UserNav() {
   const { user, loading } = useAuth();
@@ -94,6 +95,14 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          {user.role === 'Admin' && (
+            <Link href="/admin">
+              <DropdownMenuItem className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Manage Users</span>
+              </DropdownMenuItem>
+            </Link>
+          )}
           <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
