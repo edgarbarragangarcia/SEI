@@ -93,13 +93,17 @@ export function SheetSyncDashboard() {
       // This part is highly dependent on the actual data structure
       // We'll use the sucursalMapping as an example
       const sucursalKey = Object.keys(sucursalMapping).find(key => sucursalMapping[key] === user.sucursal);
-      return sucursalKey && row.Supplier === sucursalKey;
+      if (sucursalKey && row.Supplier === sucursalKey) {
+        return true;
+      }
+      // Fallback for direct sucursal name match
+      if (row.Sucursal === user.sucursal || row.sucursal === user.sucursal) {
+        return true;
+      }
+      return false;
     });
 
-    if(filteredData.length > 0) return filteredData;
-
-    // Fallback for direct sucursal name match if mapping fails
-    return data.filter(row => row.Sucursal === user.sucursal || row.sucursal === user.sucursal);
+    return filteredData;
   };
 
   const processAndSetData = (data: Record<string, any>[]) => {
