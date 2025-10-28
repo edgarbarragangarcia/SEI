@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Papa from "papaparse";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "next-auth/react";
 
 import {
   Card,
@@ -35,9 +34,6 @@ const TableSkeleton = () => (
   </div>
 );
 
-// The user already published the sheet, so we can use the public CSV URL.
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRAgbsDii4x9lUmhkhjqwkgj9jx8MiWndXbWSn3H9co/pub?gid=1247634128&single=true&output=csv";
-
 export function SheetSyncDashboard() {
   const [isFetching, setIsFetching] = useState(false);
   const [sheetData, setSheetData] = useState<Record<string, any>[] | null>(
@@ -45,53 +41,83 @@ export function SheetSyncDashboard() {
   );
   const [tableHeaders, setTableHeaders] = useState<string[]>([]);
   const { toast } = useToast();
-  const { user } = useAuth();
-  
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const [editedCells, setEditedCells] = useState<Record<string, any>>({});
+
   const handleFetchData = async () => {
     setIsFetching(true);
     setSheetData(null);
     setTableHeaders([]);
 
     try {
-      const response = await fetch(SHEET_URL);
+      const response = await fetch('/api/sheets');
       if (!response.ok) {
-        throw new Error(`Error fetching CSV: ${response.statusText}`);
+        throw new Error(`Error fetching data: ${response.statusText}`);
       }
-      const csvText = await response.text();
+      const data = await response.json();
       
-      Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          processAndSetData(results.data as Record<string, any>[]);
-          toast({
-            title: "¡Éxito!",
-            description: "Los datos de tu hoja se han cargado.",
-            className:
-              "bg-accent text-accent-foreground border-green-300 dark:border-green-700",
+      if (data && data.length > 0) {
+        let headers = data[0];
+        const rows = data.slice(1).map((row: any) => {
+          const rowData: Record<string, any> = {};
+          row.forEach((cell: any, index: number) => {
+            if (index < headers.length) {
+              rowData[headers[index]] = cell;
+            } else {
+              // Handle rows that are longer than the header row
+              const newHeader = `Column ${index + 1}`;
+              if (!headers.includes(newHeader)) {
+                headers.push(newHeader);
+              }
+              rowData[newHeader] = cell;
+            }
           });
-          setIsFetching(false);
-        },
-        error: (error: any) => {
-          throw new Error(`Error parsing CSV: ${error.message}`);
-        }
-      });
+          return rowData;
+        });
+        processAndSetData(rows);
+      } else {
+        toast({
+          title: "No se encontraron datos",
+          description: "La hoja de cálculo parece estar vacía.",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Error al obtener los datos",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
       setIsFetching(false);
     }
   };
 
-  const filterDataBySucursal = (data: Record<string, any>[]) => {
+  useEffect(() => {
+    if (status === 'authenticated') {
+      handleFetchData();
+    }
+  }, [status]);
+  
+  const processAndSetData = (data: Record<string, any>[]) => {
+    if (data.length > 0) {
+      const allHeaders = Object.keys(data[0]);
+      setTableHeaders(allHeaders);
+      const filteredData = filterDataBySucursal(data, allHeaders);
+      setSheetData(filteredData);
+    } else {
+      setSheetData([]);
+      setTableHeaders([]);
+    }
+  };
+
+  const filterDataBySucursal = (data: Record<string, any>[], headers: string[]) => {
     if (!user || !user.sucursal || user.role === 'Admin' || data.length === 0) {
       return data;
     }
   
-    const sucursalHeader = Object.keys(data[0] || {}).find(
+    const sucursalHeader = headers.find(
       (header) => header.trim().toLowerCase() === 'sucursal'
     );
   
@@ -111,32 +137,57 @@ export function SheetSyncDashboard() {
       return rowSucursal && typeof rowSucursal === 'string' && rowSucursal.trim().toLowerCase() === userSucursal;
     });
   };
-
-  const processAndSetData = (data: Record<string, any>[]) => {
-    const filteredData = filterDataBySucursal(data);
-    const columnsToShow = tableHeaders.length > 0 ? tableHeaders : Object.keys(filteredData[0] || {}).slice(0, 12);
-    setSheetData(filteredData);
-    if (filteredData.length > 0) {
-      setTableHeaders(columnsToShow);
-    } else if (data.length > 0) {
-      setTableHeaders(Object.keys(data[0]).slice(0, 12));
-    }
-  };
   
   const handleInputChange = (value: string, rowIndex: number, header: string) => {
     if (!sheetData) return;
     const updatedData = [...sheetData];
     updatedData[rowIndex][header] = value;
     setSheetData(updatedData);
+
+    const cellKey = `${rowIndex + 2}`; // +2 because sheet rows are 1-indexed and we have a header
+    setEditedCells({
+      ...editedCells,
+      [cellKey]: {
+        ...editedCells[cellKey],
+        [header]: value,
+      },
+    });
   };
 
-  const handleSaveChanges = () => {
-    // This functionality is disabled because publishing to web is read-only
-    toast({
-      title: "Función no disponible",
-      description: "La edición no está disponible cuando se carga desde una URL pública.",
-      variant: "destructive",
-    });
+  const handleSaveChanges = async () => {
+    if (Object.keys(editedCells).length === 0) {
+      toast({
+        title: "No hay cambios",
+        description: "No has modificado ningún dato.",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/sheets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ updates: editedCells }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save changes');
+      }
+
+      toast({
+        title: "¡Éxito!",
+        description: "Tus cambios se han guardado correctamente.",
+      });
+      setEditedCells({});
+    } catch (error: any) {
+      toast({
+        title: "Error al guardar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -154,11 +205,7 @@ export function SheetSyncDashboard() {
                 </CardDescription>
                 </div>
                 <div className="flex gap-2">
-                <Button onClick={handleFetchData} disabled={isFetching}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-                    Consultar Datos
-                </Button>
-                <Button onClick={handleSaveChanges} disabled={true}>
+                <Button onClick={handleSaveChanges}>
                     <Save className="mr-2 h-4 w-4" />
                     Guardar Cambios
                 </Button>
@@ -189,7 +236,6 @@ export function SheetSyncDashboard() {
                                 value={row[header] || ""}
                                 onChange={(e) => handleInputChange(e.target.value, rowIndex, header)}
                                 className="w-full h-8 border-transparent hover:border-input focus:border-ring"
-                                readOnly // Cells are read-only with this method
                               />
                             </TableCell>
                           ))}

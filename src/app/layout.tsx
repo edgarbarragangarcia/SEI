@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/components/auth-provider";
 import { Toaster } from "@/components/ui/toaster";
+import Providers from "@/components/providers";
+import { Header } from "@/components/header";
 
 export const metadata: Metadata = {
   title: "SheetSync",
@@ -24,9 +25,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
+        <Providers>
+          <Header />
           {children}
-        </AuthProvider>
+        </Providers>
         <Toaster />
       </body>
     </html>

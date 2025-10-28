@@ -9,26 +9,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GoogleIcon } from "@/components/icons";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 export function LoginCard() {
-  const { toast } = useToast();
+  const router = useRouter();
 
-  const handleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error signing in with Google", error);
-      toast({
-        title: "Authentication Error",
-        description: "Failed to sign in with Google. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleSignIn = () => {
+    router.push('/auth');
   };
 
   return (
@@ -49,8 +36,7 @@ export function LoginCard() {
         </CardContent>
         <CardFooter>
           <Button className="w-full" onClick={handleSignIn}>
-            <GoogleIcon className="mr-2 h-5 w-5" />
-            Sign in with Google
+            Sign in
           </Button>
         </CardFooter>
       </Card>

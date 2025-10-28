@@ -1,35 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { Header } from "@/components/header";
-import { useAuth } from "@/hooks/use-auth";
-import { mockUsers as initialUsers, roles, sucursales } from "@/lib/mock-data";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Header } from '@/components/header';
 
 export default function AdminPage() {
-  const { user: currentUser } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<any[]>([]);
+  const [initialUsers, setInitialUsers] = useState<any[]>([]);
+  const { toast } = useToast();
 
-  if (currentUser?.role !== "Admin") {
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetch('/api/users')
+        .then(res => res.json())
+        .then(data => {
+          if (data) {
+            // Filter out duplicate users based on email (index 0)
+            const uniqueUsers = Array.from(new Map(data.map((user: any) => [user[0], user])).values());
+            setUsers(uniqueUsers);
+            setInitialUsers(JSON.parse(JSON.stringify(uniqueUsers)));
+          }
+        });
+    }
+  }, [status]);
+
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  if (session?.user?.role !== 'Admin') {
     return (
       <div className="flex flex-col min-h-screen bg-background">
         <Header />
@@ -42,13 +51,29 @@ export default function AdminPage() {
     );
   }
 
-  const handleRoleChange = (userId: string, newRole: typeof roles[number]) => {
-    setUsers(users.map(u => u.uid === userId ? { ...u, role: newRole } : u));
+  const handleRoleChange = (email: string, role: string) => {
+    setUsers(users.map(user => user[0] === email ? [user[0], user[1], role, user[3]] : user));
   };
 
-  const handleSucursalChange = (userId: string, newSucursal: typeof sucursales[number]) => {
-    setUsers(users.map(u => u.uid === userId ? { ...u, sucursal: newSucursal } : u));
+  const handleSucursalChange = (email: string, sucursal: string) => {
+    setUsers(users.map(user => user[0] === email ? [user[0], user[1], user[2], sucursal] : user));
   };
+
+  const handleSaveChanges = async () => {
+    try {
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(users),
+      });
+      toast({ title: 'Success', description: 'User data updated successfully.' });
+      setInitialUsers(JSON.parse(JSON.stringify(users)));
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update user data.', variant: 'destructive' });
+    }
+  };
+
+  const hasChanges = JSON.stringify(users) !== JSON.stringify(initialUsers);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -63,7 +88,7 @@ export default function AdminPage() {
             <CardHeader>
                 <CardTitle>User Management</CardTitle>
                 <CardDescription>
-                Edit user roles and branches. Changes are not saved.
+                Edit user roles and branches. Changes are saved to the Google Sheet.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -71,47 +96,47 @@ export default function AdminPage() {
                     <Table>
                         <TableHeader>
                         <TableRow>
-                            <TableHead>User</TableHead>
+                            <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Role</TableHead>
                             <TableHead>Branch</TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {users.map((user) => (
-                            <TableRow key={user.uid}>
-                                <TableCell className="font-medium">{user.displayName}</TableCell>
-                                <TableCell>{user.email}</TableCell>
+                        {users.slice(1).map((user, index) => (
+                            <TableRow key={index}>
+                                <TableCell>{user[1]}</TableCell>
+                                <TableCell>{user[0]}</TableCell>
                                 <TableCell>
-                                    <Select 
-                                        value={user.role} 
-                                        onValueChange={(value: typeof roles[number]) => handleRoleChange(user.uid, value)}
-                                    >
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Select role" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {roles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}
-                                        </SelectContent>
+                                    <Select value={user[2]} onValueChange={(value) => handleRoleChange(user[0], value)}>
+                                    <SelectTrigger>{user[2]}</SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Admin">Admin</SelectItem>
+                                        <SelectItem value="User">User</SelectItem>
+                                    </SelectContent>
                                     </Select>
                                 </TableCell>
                                 <TableCell>
-                                    <Select 
-                                        value={user.sucursal} 
-                                        onValueChange={(value: typeof sucursales[number]) => handleSucursalChange(user.uid, value)}
-                                    >
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Select branch" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {sucursales.map(sucursal => <SelectItem key={sucursal} value={sucursal}>{sucursal}</SelectItem>)}
-                                        </SelectContent>
+                                    <Select value={user[3]} onValueChange={(value) => handleSucursalChange(user[0], value)}>
+                                    <SelectTrigger>{user[3]}</SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="AGUASCALIENTES">AGUASCALIENTES</SelectItem>
+                                        <SelectItem value="TOLUCA">TOLUCA</SelectItem>
+                                        <SelectItem value="CIUDAD DE MEXICO">CIUDAD DE MEXICO</SelectItem>
+                                        <SelectItem value="GUADALAJARA">GUADALAJARA</SelectItem>
+                                        <SelectItem value="Todas">Todas</SelectItem>
+                                    </SelectContent>
                                     </Select>
                                 </TableCell>
                             </TableRow>
                         ))}
                         </TableBody>
                     </Table>
+                </div>
+                <div className="flex justify-end mt-4">
+                    <Button onClick={handleSaveChanges} disabled={!hasChanges}>
+                    Save Changes
+                    </Button>
                 </div>
             </CardContent>
             </Card>

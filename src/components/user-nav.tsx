@@ -12,51 +12,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/hooks/use-auth";
-import { auth } from "@/lib/firebase";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { LogOut, User as UserIcon, LogIn, Building, Settings } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function UserNav() {
-  const { user, loading } = useAuth();
-  const { toast } = useToast();
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  const handleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error signing in with Google", error);
-      toast({
-        title: "Authentication Error",
-        description: "Failed to sign in with Google. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Error signing out", error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (loading) {
+  if (status === "loading") {
     return <Skeleton className="h-10 w-10 rounded-full" />;
   }
 
+  if (!session) {
+    return (
+      <Button variant="ghost" onClick={() => signIn('google')}>
+        <LogIn className="mr-2 h-4 w-4" />
+        Login
+      </Button>
+    );
+  }
+
+  const { user } = session;
+
   if (!user) {
     return (
-      <Button variant="ghost" onClick={handleSignIn}>
+      <Button variant="ghost" onClick={() => signIn('google')}>
         <LogIn className="mr-2 h-4 w-4" />
         Login
       </Button>
@@ -68,7 +49,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.photoURL ?? ""} alt={user.displayName ?? ""} />
+            <AvatarImage src={user.image ?? ""} alt={user.name ?? ""} />
             <AvatarFallback>
               <UserIcon />
             </AvatarFallback>
@@ -79,7 +60,7 @@ export function UserNav() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user.displayName}
+              {user.name}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
@@ -96,14 +77,12 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {user.role === 'Admin' && (
-            <Link href="/admin">
-              <DropdownMenuItem className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Manage Users</span>
-              </DropdownMenuItem>
-            </Link>
+            <DropdownMenuItem onClick={() => router.push('/admin')} className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Manage Users</span>
+            </DropdownMenuItem>
           )}
-          <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+          <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/landing' })} className="cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>
