@@ -31,9 +31,8 @@ export async function getSheetData(sheetUrl: string) {
     const auth = getJwtClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Assume data is in a sheet named 'Sheet1' and the range covers columns A-Z.
-    // You might need to adjust this.
-    const range = 'Sheet1!A:Z';
+    // Assume data is in a sheet named 'Sheet1' and the range covers columns A-L.
+    const range = 'Sheet1!A:L';
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
