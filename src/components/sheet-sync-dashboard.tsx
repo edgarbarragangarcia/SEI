@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { getSheetData } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,12 +29,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Table2, FileUp } from "lucide-react";
+import { Loader2, Table2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const formSchema = z.object({
   sheetUrl: z.string().url({ message: "Please enter a valid Google Sheet URL." }),
 });
+
+const sucursalMapping: { [key: string]: string } = {
+  "Supplier A": "AGUASCALIENTES",
+  "Supplier B": "TOLUCA",
+  "Supplier C": "CIUDAD DE MEXICO",
+  "Supplier D": "GUADALAJARA",
+  "Supplier E": "HERMOSILLO",
+  "Supplier F": "MONTERREY",
+  "Supplier G": "TIJUANA",
+};
 
 const TableSkeleton = () => (
   <div className="space-y-2">
@@ -50,6 +61,7 @@ export function SheetSyncDashboard() {
   const [sheetData, setSheetData] = useState<Record<string, any>[] | null>(null);
   const [tableHeaders, setTableHeaders] = useState<string[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,6 +69,23 @@ export function SheetSyncDashboard() {
       sheetUrl: "",
     },
   });
+
+  const filterDataBySucursal = (data: Record<string, any>[]) => {
+    if (!user || !user.sucursal || user.role === 'Admin') {
+      return data;
+    }
+    return data.filter(row => sucursalMapping[row.Supplier] === user.sucursal);
+  }
+
+  const processAndSetData = (data: Record<string, any>[]) => {
+    const filteredData = filterDataBySucursal(data);
+    setSheetData(filteredData);
+    if (filteredData.length > 0) {
+      setTableHeaders(Object.keys(filteredData[0]));
+    } else {
+       setTableHeaders(data.length > 0 ? Object.keys(data[0]) : []);
+    }
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsFetching(true);
@@ -72,10 +101,7 @@ export function SheetSyncDashboard() {
         variant: "destructive",
       });
     } else if (result.data) {
-      setSheetData(result.data);
-      if (result.data.length > 0) {
-        setTableHeaders(Object.keys(result.data[0]));
-      }
+      processAndSetData(result.data);
       toast({
         title: "Success!",
         description: "Your sheet data has been loaded.",
@@ -111,8 +137,7 @@ export function SheetSyncDashboard() {
           }, {} as Record<string, any>);
         });
 
-        setTableHeaders(headers);
-        setSheetData(data);
+        processAndSetData(data);
         toast({
           title: "Success!",
           description: "Your CSV data has been loaded.",
@@ -217,7 +242,7 @@ export function SheetSyncDashboard() {
           <CardHeader>
             <CardTitle>Sheet Data</CardTitle>
             <CardDescription>
-              The data from your connected source is displayed below.
+              {`Displaying data for ${user?.role === 'Admin' ? 'all branches' : user?.sucursal}.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -249,7 +274,7 @@ export function SheetSyncDashboard() {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-10">
-                  The file appears to be empty or data could not be parsed.
+                  No data available for your branch or the file is empty.
                 </p>
               )
             ) : (

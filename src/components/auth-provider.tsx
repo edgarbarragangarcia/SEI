@@ -1,8 +1,13 @@
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+
+export interface User extends FirebaseUser {
+  role?: string;
+  sucursal?: string;
+}
 
 export interface AuthContextType {
   user: User | null;
@@ -16,8 +21,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // In a real app, you'd fetch the role and sucursal from your database
+        const augmentedUser: User = {
+          ...firebaseUser,
+          // This is a mock implementation
+          role: 'Admin',
+          sucursal: 'AGUASCALIENTES',
+        };
+        setUser(augmentedUser);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 

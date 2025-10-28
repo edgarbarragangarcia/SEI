@@ -1,7 +1,6 @@
 "use client";
 import { useContext } from 'react';
-import { AuthContext, type AuthContextType } from '@/components/auth-provider';
-import type { User } from 'firebase/auth';
+import { AuthContext, type AuthContextType, type User } from '@/components/auth-provider';
 
 const useFirebaseAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
@@ -36,6 +35,9 @@ const useMockAuth = (): AuthContextType => {
     }),
     reload: async () => {},
     toJSON: () => ({}),
+    // New fields for role and branch
+    role: 'Admin',
+    sucursal: 'AGUASCALIENTES',
   };
 
   return {

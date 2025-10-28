@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { auth } from "@/lib/firebase";
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import { LogOut, User as UserIcon, LogIn } from "lucide-react";
+import { LogOut, User as UserIcon, LogIn, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function UserNav() {
@@ -85,6 +85,13 @@ export function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="font-normal text-xs text-muted-foreground flex items-center">
+              <Building className="mr-2 h-3 w-3" />
+              <span>{user.sucursal} ({user.role})</span>
+            </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
