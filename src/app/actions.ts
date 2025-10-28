@@ -3,44 +3,44 @@
 
 const mockData = [
     {
-      "User ID": "USR-001",
-      "Name": "Alex Johnson",
-      "Email": "alex.j@example.com",
-      "Subscription": "Premium",
-      "Join Date": "2023-01-15",
-      "Status": "Active"
+      "ProductID": "P001",
+      "ProductName": "Laptop",
+      "Category": "Electronics",
+      "Price": 1200,
+      "Stock": 50,
+      "Supplier": "Supplier A"
     },
     {
-      "User ID": "USR-002",
-      "Name": "Maria Garcia",
-      "Email": "maria.g@example.com",
-      "Subscription": "Basic",
-      "Join Date": "2023-02-20",
-      "Status": "Active"
+      "ProductID": "P002",
+      "ProductName": "Smartphone",
+      "Category": "Electronics",
+      "Price": 800,
+      "Stock": 150,
+      "Supplier": "Supplier B"
     },
     {
-      "User ID": "USR-003",
-      "Name": "Chen Wei",
-      "Email": "chen.w@example.com",
-      "Subscription": "Free",
-      "Join Date": "2023-03-10",
-      "Status": "Inactive"
+      "ProductID": "P003",
+      "ProductName": "Office Chair",
+      "Category": "Furniture",
+      "Price": 150,
+      "Stock": 300,
+      "Supplier": "Supplier C"
     },
     {
-      "User ID": "USR-004",
-      "Name": "Fatima Al-Fassi",
-      "Email": "fatima.a@example.com",
-      "Subscription": "Premium",
-      "Join Date": "2023-04-05",
-      "Status": "Active"
+      "ProductID": "P004",
+      "ProductName": "Desk Lamp",
+      "Category": "Furniture",
+      "Price": 45,
+      "Stock": 500,
+      "Supplier": "Supplier D"
     },
     {
-      "User ID": "USR-005",
-      "Name": "David Smith",
-      "Email": "david.s@example.com",
-      "Subscription": "Basic",
-      "Join Date": "2023-05-21",
-      "Status": "On Hold"
+      "ProductID": "P005",
+      "ProductName": "Notebook",
+      "Category": "Stationery",
+      "Price": 5,
+      "Stock": 1000,
+      "Supplier": "Supplier E"
     }
   ];
 
