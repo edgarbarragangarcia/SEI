@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getSheetData } from "@/app/actions";
+import Papa from "papaparse";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -24,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table2, RefreshCw, Save } from "lucide-react";
-import { Label } from "@/components/ui/label";
 
 const TableSkeleton = () => (
   <div className="space-y-2">
@@ -38,7 +37,6 @@ const TableSkeleton = () => (
 
 // The user already published the sheet, so we can use the public CSV URL.
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRAgbsDii4x9lUmhkhjqwkgj9jx8MiWndXbWSn3H9co/pub?gid=1247634128&single=true&output=csv";
-
 
 export function SheetSyncDashboard() {
   const [isFetching, setIsFetching] = useState(false);
@@ -54,24 +52,38 @@ export function SheetSyncDashboard() {
     setSheetData(null);
     setTableHeaders([]);
 
-    const result = await getSheetData(SHEET_URL);
-
-    if (result.error) {
+    try {
+      const response = await fetch(SHEET_URL);
+      if (!response.ok) {
+        throw new Error(`Error fetching CSV: ${response.statusText}`);
+      }
+      const csvText = await response.text();
+      
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          processAndSetData(results.data as Record<string, any>[]);
+          toast({
+            title: "¡Éxito!",
+            description: "Los datos de tu hoja se han cargado.",
+            className:
+              "bg-accent text-accent-foreground border-green-300 dark:border-green-700",
+          });
+          setIsFetching(false);
+        },
+        error: (error: any) => {
+          throw new Error(`Error parsing CSV: ${error.message}`);
+        }
+      });
+    } catch (error: any) {
       toast({
         title: "Error al obtener los datos",
-        description: result.error,
+        description: error.message,
         variant: "destructive",
       });
-    } else if (result.data) {
-      processAndSetData(result.data as Record<string, any>[]);
-      toast({
-        title: "¡Éxito!",
-        description: "Los datos de tu hoja se han cargado.",
-        className:
-          "bg-accent text-accent-foreground border-green-300 dark:border-green-700",
-      });
+      setIsFetching(false);
     }
-    setIsFetching(false);
   };
 
   const filterDataBySucursal = (data: Record<string, any>[]) => {
@@ -102,11 +114,12 @@ export function SheetSyncDashboard() {
 
   const processAndSetData = (data: Record<string, any>[]) => {
     const filteredData = filterDataBySucursal(data);
+    const columnsToShow = tableHeaders.length > 0 ? tableHeaders : Object.keys(filteredData[0] || {}).slice(0, 12);
     setSheetData(filteredData);
     if (filteredData.length > 0) {
-      setTableHeaders(Object.keys(filteredData[0]));
+      setTableHeaders(columnsToShow);
     } else if (data.length > 0) {
-      setTableHeaders(Object.keys(data[0]));
+      setTableHeaders(Object.keys(data[0]).slice(0, 12));
     }
   };
   
