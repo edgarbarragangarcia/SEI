@@ -24,9 +24,9 @@ const Card = ({ patient }: { patient: any }) => {
       ref={drag as unknown as React.Ref<HTMLDivElement>}
       className={`p-3 mb-3 bg-white rounded-lg shadow-sm border ${isDragging ? 'opacity-50' : 'opacity-100'}`}
     >
-      <h4 className="font-bold text-sm">{`${patient.nombre} ${patient.apellidop} ${patient.apellidom}`}</h4>
-      <p className="text-xs text-gray-600">{patient.email}</p>
-      <p className="text-xs text-gray-800 font-mono">{patient.nhcdefinitivo}</p>
+      <h4 className="font-bold text-sm">{`${patient.NOMBRE} ${patient.APELLIDOP} ${patient.APELLIDOM}`}</h4>
+      <p className="text-xs text-gray-600">{patient.EMAIL}</p>
+      <p className="text-xs text-gray-800 font-mono">{patient.NHCDEFINITIVO}</p>
     </div>
   );
 };
@@ -79,11 +79,11 @@ const KanbanPage = () => {
   const handleDrop = (patient: any, newState: string) => {
     setPatients((prevPatients) =>
       prevPatients.map((p) =>
-        p.nhcdefinitivo === patient.nhcdefinitivo ? { ...p, estado: newState } : p
+        p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? { ...p, ESTADO: newState } : p
       )
     );
     // Here you would typically send a request to your backend to update the patient's state
-    console.log(`Patient ${patient.nhcdefinitivo} moved to ${newState}`);
+    console.log(`Patient ${patient.NHCDEFINITIVO} moved to ${newState}`);
   };
 
   if (loading) {
@@ -103,7 +103,7 @@ const KanbanPage = () => {
             <Column
               key={state}
               state={state}
-              patients={patients.filter((p) => p.estado && p.estado === state)}
+              patients={patients.filter((p) => p.ESTADO && p.ESTADO === state)}
               onDrop={handleDrop}
             />
           ))}
