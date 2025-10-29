@@ -102,26 +102,29 @@ interface StatusColumnProps {
   cards: CardData[];
   moveCard: (dragIndex: number, hoverIndex: number) => void;
   status: string;
+  updateCardStatus: (cardId: string, newStatus: string) => void;
+  data: CardData[];
 }
 
-const StatusColumn: React.FC<StatusColumnProps> = ({ title, cards, moveCard, status }) => {
+const StatusColumn: React.FC<StatusColumnProps> = ({ title, cards, moveCard, status, updateCardStatus, data }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
-    drop: (item: { id: string }) => {
-      // Here you would typically update the status of the card in your state
-      console.log(`Card ${item.id} dropped on ${status}`);
+    drop: (item: { id: string, originalStatus: string }) => {
+      if (status !== item.originalStatus) {
+        updateCardStatus(item.id, status);
+      }
     },
   });
 
   drop(ref);
 
   return (
-    <div ref={ref} className="bg-gray-100/50 dark:bg-gray-800/50 rounded-lg p-4 w-full md:w-1/4">
+    <div ref={ref} className="bg-gray-100/50 dark:bg-gray-800/50 rounded-lg p-4 w-full md:w-1/4 min-h-[200px]">
       <h3 className="font-bold text-lg mb-4">{title}</h3>
       <div>
-        {cards.map((card, index) => (
-          <DraggableCard key={card.NHCDEFINITIVO} index={index} row={card} moveCard={moveCard} />
+        {cards.map((card) => (
+          <DraggableCard key={card.NHCDEFINITIVO} index={data.findIndex(d => d.NHCDEFINITIVO === card.NHCDEFINITIVO)} row={card} moveCard={moveCard} />
         ))}
       </div>
     </div>
@@ -163,6 +166,30 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
     setData(newData);
   };
 
+  const updateCardStatus = async (cardId: string, newStatus: string) => {
+    const card = data.find(c => c.NHCDEFINITIVO === cardId);
+    if (card) {
+      const updatedCard = { ...card, ESTADO: newStatus };
+      
+      // Optimistically update the UI
+      setData(prevData => prevData.map(c => c.NHCDEFINITIVO === cardId ? updatedCard : c));
+
+      try {
+        await fetch('https://n8nqa.ingenes.com:5689/webhook/postSEI', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedCard),
+        });
+      } catch (error) {
+        console.error('Failed to update card status:', error);
+        // Revert the optimistic update if the API call fails
+        setData(prevData => prevData.map(c => c.NHCDEFINITIVO === cardId ? card : c));
+      }
+    }
+  };
+
   if (loading) {
     return <p>Loading...</p>;
   }
@@ -187,6 +214,8 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
             status={status}
             cards={cardsByStatus[status] || []}
             moveCard={moveCard}
+            updateCardStatus={updateCardStatus}
+            data={data}
           />
         ))}
       </div>
