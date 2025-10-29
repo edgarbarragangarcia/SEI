@@ -73,22 +73,22 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ row, index, moveCard }) =
   const fullName = `${row['NOMBRE'] || ''} ${row['APELLIDOP'] || ''} ${row['APELLIDOM'] || ''}`.trim().toUpperCase();
 
   return (
-    <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }} className="mb-4">
-      <Card className="transition-all duration-300 hover:shadow-lg">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-bold">{fullName || 'No Name'}</CardTitle>
+<div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }} className="mb-2 cursor-move">
+      <Card className="transition-all duration-300 hover:shadow-lg flex flex-col h-28">
+        <CardHeader className="pb-1">
+          <CardTitle className="text-xs font-bold truncate">{fullName || 'No Name'}</CardTitle>
         </CardHeader>
-        <CardContent className="flex-grow space-y-2 text-sm">
+        <CardContent className="flex-grow space-y-0.5 text-[10px] overflow-y-auto">
           {row['EMAIL'] && (
-            <div className="flex items-center text-muted-foreground">
-              <Mail className="mr-2 h-4 w-4" />
-              <span>{row['EMAIL']}</span>
+            <div className="flex items-center text-muted-foreground min-w-0">
+              <Mail className="mr-1.5 h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{row['EMAIL']}</span>
             </div>
           )}
           {row['NHCDEFINITIVO'] && (
-            <div className="flex items-center text-muted-foreground">
-              <Hash className="mr-2 h-4 w-4" />
-              <span>{row['NHCDEFINITIVO']}</span>
+            <div className="flex items-center text-muted-foreground min-w-0">
+              <Hash className="mr-1.5 h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{row['NHCDEFINITIVO']}</span>
             </div>
           )}
         </CardContent>
@@ -104,9 +104,10 @@ interface StatusColumnProps {
   status: string;
   updateCardStatus: (cardId: string, newStatus: string) => void;
   data: CardData[];
+  colorClass: string;
 }
 
-const StatusColumn: React.FC<StatusColumnProps> = ({ title, cards, moveCard, status, updateCardStatus, data }) => {
+const StatusColumn: React.FC<StatusColumnProps> = ({ title, cards, moveCard, status, updateCardStatus, data, colorClass }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
@@ -120,8 +121,8 @@ const StatusColumn: React.FC<StatusColumnProps> = ({ title, cards, moveCard, sta
   drop(ref);
 
   return (
-    <div ref={ref} className="bg-gray-100/50 dark:bg-gray-800/50 rounded-lg p-4 w-full md:w-1/4 min-h-[200px]">
-      <h3 className="font-bold text-lg mb-4">{title}</h3>
+    <div ref={ref} className={`rounded-lg p-4 ${colorClass}`}>
+      <h3 className="font-bold text-lg mb-4 text-center">{title}</h3>
       <div>
         {cards.map((card) => (
           <DraggableCard key={card.NHCDEFINITIVO} index={data.findIndex(d => d.NHCDEFINITIVO === card.NHCDEFINITIVO)} row={card} moveCard={moveCard} />
@@ -200,13 +201,22 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
 
   if (displayAs === 'cards') {
     const statuses = ['ATENDIDA', 'AGENDADA', 'PENDIENTE', 'RECHAZA', 'NO ASISTIO', 'ASISTIO'];
+    const statusColors: Record<string, string> = {
+      ATENDIDA: 'bg-blue-100 dark:bg-blue-900/50',
+      AGENDADA: 'bg-yellow-100 dark:bg-yellow-900/50',
+      PENDIENTE: 'bg-orange-100 dark:bg-orange-900/50',
+      RECHAZA: 'bg-red-100 dark:bg-red-900/50',
+      'NO ASISTIO': 'bg-gray-200 dark:bg-gray-700/50',
+      ASISTIO: 'bg-green-100 dark:bg-green-900/50',
+    };
+
     const cardsByStatus = statuses.reduce((acc, status) => {
       acc[status] = data.filter(card => card.ESTADO && card.ESTADO.toUpperCase() === status);
       return acc;
     }, {} as Record<string, CardData[]>);
 
     return (
-      <div className="flex flex-col md:flex-row gap-4 p-4 md:p-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-4 md:p-8">
         {statuses.map(status => (
           <StatusColumn
             key={status}
@@ -216,6 +226,7 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
             moveCard={moveCard}
             updateCardStatus={updateCardStatus}
             data={data}
+            colorClass={statusColors[status] || 'bg-gray-100/50 dark:bg-gray-800/50'}
           />
         ))}
       </div>
