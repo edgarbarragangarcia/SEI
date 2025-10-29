@@ -10,7 +10,7 @@ const auth = new google.auth.GoogleAuth({
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
-const spreadsheetId = '1sRAgbsDii4x9lUmhkhjqwkgj9jx8MiWndXbWSn3H9co';
+const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
 const usersSheetName = 'Users';
 
 export async function GET() {

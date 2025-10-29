@@ -96,6 +96,32 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ row, index, moveCard }) =
               <span className="truncate">{row['NHCDEFINITIVO']}</span>
             </div>
           )}
+
+          {/* Additional columns requested: B, C, J, M */}
+          {row['SUCURSAL'] && (
+            <div className="flex items-center text-muted-foreground min-w-0">
+              <span className="text-[10px] font-medium mr-2">Sucursal:</span>
+              <span className="truncate">{row['SUCURSAL']}</span>
+            </div>
+          )}
+          {row['FV'] && (
+            <div className="flex items-center text-muted-foreground min-w-0">
+              <span className="text-[10px] font-medium mr-2">FV:</span>
+              <span className="truncate">{row['FV']}</span>
+            </div>
+          )}
+          {row['TELEFONO'] && (
+            <div className="flex items-center text-muted-foreground min-w-0">
+              <span className="text-[10px] font-medium mr-2">Tel:</span>
+              <span className="truncate">{row['TELEFONO']}</span>
+            </div>
+          )}
+          {row['CONCEPTO'] && (
+            <div className="flex items-center text-muted-foreground min-w-0">
+              <span className="text-[10px] font-medium mr-2">Concepto:</span>
+              <span className="truncate">{row['CONCEPTO']}</span>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
