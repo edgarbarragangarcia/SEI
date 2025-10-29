@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -8,15 +8,7 @@ const ItemTypes = {
   CARD: 'card',
 };
 
-const states = ["ATENDIDA", "AGENDADA", "PENDIENTE", "RECHAZA", "NO ASISTIO", "ASISTIO"];
-
-// Mock data - replace with your actual data fetching
-const mockPatients = [
-  { id: 1, nombre: 'Ingrid', apellidop: 'Garcia', apellidom: 'Navarro', email: 'ingridgn@hotmail.es', nhcdefinitivo: '512049NN', estado: 'PENDIENTE' },
-  { id: 2, nombre: 'Maricela', apellidop: 'Barron', apellidom: 'Morlett', email: 'mar_morlett@hotmail.com', nhcdefinitivo: '506556FFFF', estado: 'AGENDADA' },
-  { id: 3, nombre: 'Osmara', apellidop: 'Cisneros', apellidom: 'Sanchez', email: 'ciso8708@gmail.com', nhcdefinitivo: '506556', estado: 'PENDIENTE' },
-  { id: 4, nombre: 'Verónica', apellidop: 'Dionicio', apellidom: 'Lopez', email: 'veritodionicio100@gmail.com', nhcdefinitivo: '494323', estado: 'AGENDADA' },
-];
+const states = ["ATENDIDA", "Agendada", "PENDIENTE", "RECHAZA", "NO ASISTIO", "ASISTIO"];
 
 const Card = ({ patient }: { patient: any }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
@@ -52,8 +44,8 @@ const Column = ({ state, patients, onDrop }: { state: string, patients: any[], o
     <div ref={drop as unknown as React.Ref<HTMLDivElement>} className={`flex-1 p-4 bg-gray-100 rounded-lg ${isOver ? 'bg-blue-100' : ''}`}>
       <h3 className="font-bold mb-4 text-center text-sm uppercase tracking-wider">{state}</h3>
       <div className="space-y-2">
-        {patients.map((patient) => (
-          <Card key={patient.id} patient={patient} />
+        {patients.map((patient, index) => (
+          <Card key={index} patient={patient} />
         ))}
       </div>
     </div>
@@ -61,17 +53,46 @@ const Column = ({ state, patients, onDrop }: { state: string, patients: any[], o
 };
 
 const KanbanPage = () => {
-  const [patients, setPatients] = useState(mockPatients);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('https://n8nqa.ingenes.com:5689/webhook/getSEI');
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.details || 'Failed to fetch data');
+        }
+        setPatients(Array.isArray(result) ? result : [result]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleDrop = (patient: any, newState: string) => {
     setPatients((prevPatients) =>
       prevPatients.map((p) =>
-        p.id === patient.id ? { ...p, estado: newState } : p
+        p.nhcdefinitivo === patient.nhcdefinitivo ? { ...p, estado: newState } : p
       )
     );
     // Here you would typically send a request to your backend to update the patient's state
-    console.log(`Patient ${patient.id} moved to ${newState}`);
+    console.log(`Patient ${patient.nhcdefinitivo} moved to ${newState}`);
   };
+
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center h-screen">
+            <p>Loading data...</p>
+        </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -82,7 +103,7 @@ const KanbanPage = () => {
             <Column
               key={state}
               state={state}
-              patients={patients.filter((p) => p.estado === state)}
+              patients={patients.filter((p) => p.estado && p.estado === state)}
               onDrop={handleDrop}
             />
           ))}
