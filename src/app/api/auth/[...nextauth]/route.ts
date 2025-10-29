@@ -14,6 +14,7 @@ const sheets = google.sheets({ version: 'v4', auth });
 const spreadsheetId = '1sRAgbsDii4x9lUmhkhjqwkgj9jx8MiWndXbWSn3H9co';
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,

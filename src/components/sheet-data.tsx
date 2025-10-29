@@ -27,6 +27,11 @@ interface DraggableCardProps {
   moveCard: (dragIndex: number, hoverIndex: number) => void;
 }
 
+const toTitleCase = (str: string) => {
+  if (!str) return '';
+  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+};
+
 const DraggableCard: React.FC<DraggableCardProps> = ({ row, index, moveCard }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [, drop] = useDrop({
@@ -70,7 +75,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ row, index, moveCard }) =
 
   drag(drop(ref));
 
-  const fullName = `${row['NOMBRE'] || ''} ${row['APELLIDOP'] || ''} ${row['APELLIDOM'] || ''}`.trim().toUpperCase();
+  const fullName = toTitleCase(`${row['NOMBRE'] || ''} ${row['APELLIDOP'] || ''} ${row['APELLIDOM'] || ''}`.trim());
 
   return (
 <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }} className="mb-2 cursor-move">
@@ -112,7 +117,12 @@ const StatusColumn: React.FC<StatusColumnProps> = ({ title, cards, moveCard, sta
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
     drop: (item: { id: string, originalStatus: string }) => {
-      if (status !== item.originalStatus) {
+      console.log('Drop event:', {
+        droppedOnStatus: status,
+        cardOriginalStatus: item.originalStatus,
+        condition: status.toUpperCase() !== item.originalStatus?.toUpperCase(),
+      });
+      if (status.toUpperCase() !== item.originalStatus?.toUpperCase()) {
         updateCardStatus(item.id, status);
       }
     },
@@ -121,8 +131,8 @@ const StatusColumn: React.FC<StatusColumnProps> = ({ title, cards, moveCard, sta
   drop(ref);
 
   return (
-    <div ref={ref} className={`rounded-lg p-4 ${colorClass}`}>
-      <h3 className="font-bold text-lg mb-4 text-center">{title}</h3>
+    <div ref={ref} className={`rounded-xl p-4 shadow-md border ${colorClass}`}>
+      <h3 className="font-bold text-md mb-4 text-center uppercase tracking-wider text-gray-600">{title} ({cards.length})</h3>
       <div>
         {cards.map((card) => (
           <DraggableCard key={card.NHCDEFINITIVO} index={data.findIndex(d => d.NHCDEFINITIVO === card.NHCDEFINITIVO)} row={card} moveCard={moveCard} />
@@ -143,7 +153,7 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch('https://n8nqa.ingenes.com:5689/webhook/getSEI');
+        const response = await fetch('/api/get-data');
         const result = await response.json();
         if (!response.ok) {
           throw new Error(result.details || 'Failed to fetch data');
@@ -175,13 +185,22 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
       // Optimistically update the UI
       setData(prevData => prevData.map(c => c.NHCDEFINITIVO === cardId ? updatedCard : c));
 
+      console.log('Updating card status:', { NHCDEFINITIVO: cardId, ESTADO: newStatus });
+
       try {
-        await fetch('https://n8nqa.ingenes.com:5689/webhook/postSEI', {
+        await fetch('/api/update-status', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(updatedCard),
+          body: JSON.stringify({
+            NHCDEFINITIVO: card.NHCDEFINITIVO,
+            ESTADO: newStatus,
+            NOMBRE: card.NOMBRE,
+            APELLIDOP: card.APELLIDOP,
+            APELLIDOM: card.APELLIDOM,
+            TELEFONO: card.TELEFONO,
+          }),
         });
       } catch (error) {
         console.error('Failed to update card status:', error);
@@ -202,12 +221,12 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
   if (displayAs === 'cards') {
     const statuses = ['ATENDIDA', 'AGENDADA', 'PENDIENTE', 'RECHAZA', 'NO ASISTIO', 'ASISTIO'];
     const statusColors: Record<string, string> = {
-      ATENDIDA: 'bg-blue-100 dark:bg-blue-900/50',
-      AGENDADA: 'bg-yellow-100 dark:bg-yellow-900/50',
-      PENDIENTE: 'bg-orange-100 dark:bg-orange-900/50',
-      RECHAZA: 'bg-red-100 dark:bg-red-900/50',
-      'NO ASISTIO': 'bg-gray-200 dark:bg-gray-700/50',
-      ASISTIO: 'bg-green-100 dark:bg-green-900/50',
+      ATENDIDA: "bg-blue-50 border-blue-200",
+      AGENDADA: "bg-yellow-50 border-yellow-200",
+      PENDIENTE: "bg-orange-50 border-orange-200",
+      RECHAZA: "bg-red-50 border-red-200",
+      'NO ASISTIO': "bg-slate-100 border-slate-200",
+      ASISTIO: "bg-green-50 border-green-200",
     };
 
     const cardsByStatus = statuses.reduce((acc, status) => {
