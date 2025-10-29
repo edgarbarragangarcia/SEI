@@ -24,10 +24,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased h-screen overflow-hidden flex flex-col">
         <Providers>
           <Header />
-          <main className="pt-24">
+          <main className="flex-grow pt-24 overflow-y-auto">
             {children}
           </main>
         </Providers>

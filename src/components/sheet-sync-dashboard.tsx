@@ -59,12 +59,12 @@ export const SheetSyncDashboard = () => {
               <p className="text-3xl font-bold">{data.length}</p>
             </CardContent>
           </Card>
-          <Card className="flex-grow bg-gradient-to-br from-rose-50/60 to-teal-50/60 backdrop-blur-sm">
+          <Card className="flex-grow flex flex-col bg-gradient-to-br from-rose-50/60 to-teal-50/60 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-md">Distribución por Sucursal</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height="90%">
+            <CardContent className="flex-grow">
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={sucursalData}
@@ -88,12 +88,12 @@ export const SheetSyncDashboard = () => {
             </CardContent>
           </Card>
         </div>
-        <Card className="col-span-2 bg-gradient-to-br from-rose-50/60 to-teal-50/60 backdrop-blur-sm">
+        <Card className="col-span-2 flex flex-col bg-gradient-to-br from-rose-50/60 to-teal-50/60 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-md">Distribución por Estado</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height="95%">
+          <CardContent className="flex-grow">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" fontSize={12} />

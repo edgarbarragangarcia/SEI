@@ -15,7 +15,7 @@ const toTitleCase = (str: string) => {
   return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 };
 
-const Card = ({ patient }: { patient: any }) => {
+const KanbanCard = ({ patient }: { patient: any }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.CARD,
     item: { patient },
@@ -59,11 +59,11 @@ const Column = ({ state, patients, onDrop }: { state: string, patients: any[], o
   const colorClass = statusColors[state] || "bg-gray-50 border-gray-200";
 
   return (
-    <div ref={drop as unknown as React.Ref<HTMLDivElement>} className={`w-1/6 min-w-0 p-4 rounded-xl shadow-md border ${colorClass} ${isOver ? 'ring-2 ring-blue-400' : ''}`}>
-      <h3 className="font-bold mb-4 text-center text-md uppercase tracking-wider text-gray-600">{state} ({patients.length})</h3>
-      <div className="space-y-2">
+    <div ref={drop as unknown as React.Ref<HTMLDivElement>} className={`w-1/6 min-w-0 p-4 rounded-xl shadow-md border ${colorClass} flex flex-col ${isOver ? 'ring-2 ring-blue-400' : ''}`}>
+      <h3 className="font-bold mb-4 text-center text-md uppercase tracking-wider text-gray-600 flex-shrink-0">{state} ({patients.length})</h3>
+      <div className="space-y-2 overflow-y-auto flex-grow">
         {patients.map((patient, index) => (
-          <Card key={index} patient={patient} />
+          <KanbanCard key={index} patient={patient} />
         ))}
       </div>
     </div>
@@ -71,11 +71,17 @@ const Column = ({ state, patients, onDrop }: { state: string, patients: any[], o
 };
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const KanbanPage = () => {
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [messages, setMessages] = useState<{ [key: string]: string }>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,8 +100,32 @@ const KanbanPage = () => {
       }
     };
 
+    const loadMessages = () => {
+      const savedMessages = localStorage.getItem('kanbanMessages');
+      if (savedMessages) {
+        setMessages(JSON.parse(savedMessages));
+      } else {
+        // Initialize with empty strings if nothing is saved
+        const initialMessages = states.reduce((acc, state) => ({ ...acc, [state]: '' }), {});
+        setMessages(initialMessages);
+      }
+    };
+
     fetchData();
+    loadMessages();
   }, []);
+
+  const handleMessageChange = (state: string, value: string) => {
+    setMessages(prev => ({ ...prev, [state]: value }));
+  };
+
+  const saveMessages = () => {
+    localStorage.setItem('kanbanMessages', JSON.stringify(messages));
+    toast({
+      title: "Mensajes guardados",
+      description: "Tus mensajes se han guardado correctamente.",
+    });
+  };
 
   const handleDrop = async (patient: any, newState: string) => {
     setPatients((prevPatients) =>
@@ -169,15 +199,38 @@ const KanbanPage = () => {
                 <Column
                   key={state}
                   state={state}
-                  patients={filteredPatients.filter((p) => p.ESTADO && p.ESTADO === state)}
+                  patients={filteredPatients.filter((p) => p.ESTADO && p.ESTADO.toUpperCase() === state.toUpperCase())}
                   onDrop={handleDrop}
                 />
               ))}
             </div>
           </TabsContent>
-          <TabsContent value="mensajes">
-            <div className="flex justify-center items-center h-96">
-              <p>Aquí irá la funcionalidad de mensajes.</p>
+          <TabsContent value="mensajes" className="flex-grow overflow-y-auto">
+            <div className="max-w-5xl mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configurar Mensajes por Estado</CardTitle>
+                  <CardDescription>Define un mensaje predeterminado para cada estado del Kanban.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {states.map(state => (
+                      <div key={state} className="space-y-2">
+                        <label className="font-medium">{toTitleCase(state)}</label>
+                        <Textarea
+                          placeholder={`Escribe el mensaje para el estado "${toTitleCase(state)}"...`}
+                          value={messages[state] || ''}
+                          onChange={(e) => handleMessageChange(state, e.target.value)}
+                          className="h-28"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-end">
+                  <Button onClick={saveMessages}>Guardar Mensajes</Button>
+                </CardFooter>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
