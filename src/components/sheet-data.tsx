@@ -61,7 +61,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ row, index, moveCard }) =
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.CARD,
     item: () => {
-      return { id: row.NHCDEFINITIVO, index };
+      return { id: row.NHCDEFINITIVO, index, originalStatus: row.ESTADO };
     },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
