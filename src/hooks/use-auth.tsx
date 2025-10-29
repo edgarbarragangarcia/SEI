@@ -1,49 +1,11 @@
 "use client";
-import { useContext } from 'react';
-import { AuthContext, type AuthContextType, type User } from '@/components/auth-provider';
+import { useSession } from 'next-auth/react';
 
-const useFirebaseAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-const useMockAuth = (): AuthContextType => {
-  const mockUser: User = {
-    uid: 'mock-user-id-1',
-    email: 'ana.garcia@example.com',
-    displayName: 'Ana García',
-    photoURL: 'https://i.pravatar.cc/150?u=user-1',
-    emailVerified: true,
-    isAnonymous: false,
-    metadata: {},
-    providerData: [],
-    providerId: 'password',
-    tenantId: null,
-    delete: async () => {},
-    getIdToken: async () => 'mock-token',
-    getIdTokenResult: async () => ({
-      token: 'mock-token',
-      expirationTime: '',
-      authTime: '',
-      issuedAtTime: '',
-      signInProvider: null,
-      signInSecondFactor: null,
-      claims: {},
-    }),
-    reload: async () => {},
-    toJSON: () => ({}),
-    // New fields for role and branch
-    role: 'Admin',
-    sucursal: 'AGUASCALIENTES',
-  };
+export const useAuth = () => {
+  const { data: session, status } = useSession();
 
   return {
-    user: mockUser,
-    loading: false,
+    user: session?.user,
+    loading: status === 'loading',
   };
-}
-
-export const useAuth = process.env.NODE_ENV === 'production' ? useFirebaseAuth : useMockAuth;
+};

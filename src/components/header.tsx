@@ -12,7 +12,7 @@ export function Header() {
         </div>
         <nav className="ml-6 flex items-center space-x-6 text-sm font-medium">
           <Link href="/">Dashboard</Link>
-          <Link href="/kanban">Kanban</Link>
+          <Link href="/agenda-naranja">Agenda Naranja</Link>
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <UserNav />

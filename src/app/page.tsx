@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { Header } from "@/components/header";
 import { LoginCard } from "@/components/login-card";
 import { SheetSyncDashboard } from "@/components/sheet-sync-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +37,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Header />
+
       <main className="flex flex-col items-center flex-1">
         {renderContent()}
       </main>
