@@ -75,12 +75,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
 
 const KanbanPage = () => {
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [messages, setMessages] = useState<{ [key: string]: string }>({});
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -184,6 +186,7 @@ const KanbanPage = () => {
             <TabsList>
               <TabsTrigger value="kanban">Kanban</TabsTrigger>
               <TabsTrigger value="mensajes">Mensajes</TabsTrigger>
+              <TabsTrigger value="calendario">Calendario</TabsTrigger>
             </TabsList>
             <input
               type="text"
@@ -228,9 +231,19 @@ const KanbanPage = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
-                  <Button onClick={saveMessages}>Guardar Mensajes</Button>
-                </CardFooter>
-              </Card>
+                <Button onClick={saveMessages}>Guardar Mensajes</Button>
+              </CardFooter>
+            </Card>
+          </div>
+          </TabsContent>
+          <TabsContent value="calendario">
+            <div className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                className="rounded-md border"
+              />
             </div>
           </TabsContent>
         </Tabs>
