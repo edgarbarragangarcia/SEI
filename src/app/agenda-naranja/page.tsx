@@ -25,47 +25,41 @@ const KanbanCard = ({ patient }: { patient: any }) => {
   }));
 
   const formattedName = `${toTitleCase(patient.NOMBRE)} ${toTitleCase(patient.APELLIDOP)} ${toTitleCase(patient.APELLIDOM)}`.trim();
-
+  
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`p-2 mb-3 bg-white rounded-lg shadow-sm border h-32 flex flex-col ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+      className={`p-2 mb-3 bg-white rounded-lg shadow-sm border h-auto min-h-[8rem] flex flex-col ${isDragging ? 'opacity-50' : 'opacity-100'}`}
     >
-      <h4 className="font-bold text-sm truncate">{formattedName}</h4>
-      <div className="space-y-0.5 mt-1 flex-grow">
-        <div className="flex items-baseline gap-1">
-          <span className="font-bold text-[10px] text-gray-700">NHC:</span>
-          <p className="text-[10px] text-gray-800 font-mono">{patient.NHCDEFINITIVO}</p>
-        </div>
-        {patient.SUCURSAL && (
-          <div className="flex items-baseline gap-1">
-            <span className="font-bold text-[10px] text-gray-700">Sucursal:</span>
-            <p className="text-[10px] text-gray-600">{patient.SUCURSAL}</p>
-          </div>
-        )}
-        {patient.TELEFONO && (
-          <div className="flex items-baseline gap-1">
-            <span className="font-bold text-[10px] text-gray-700">Tel:</span>
-            <p className="text-[10px] text-gray-600">{patient.TELEFONO}</p>
-          </div>
-        )}
-        {patient.FV && (
-          <div className="flex items-baseline gap-1">
-            <span className="font-bold text-[10px] text-gray-700">FV:</span>
-            <p className="text-[10px] text-gray-600">{patient.FV}</p>
-          </div>
-        )}
-        {patient.CONCEPTO && (
-          <div className="flex items-baseline gap-1">
-            <span className="font-bold text-[10px] text-gray-700">Concepto:</span>
-            <p className="text-[10px] text-gray-600">{patient.CONCEPTO}</p>
-          </div>
-        )}
+      <div className="mb-1 pb-1 border-b">
+        <h4 className="font-semibold text-xs leading-tight">{formattedName}</h4>
       </div>
-      <p className="text-[10px] text-gray-600 truncate mt-0.5">{patient.EMAIL}</p>
-      {patient.FV && <p className="text-xs text-gray-600">FV: {patient.FV}</p>}
-      {patient.TELEFONO && <p className="text-xs text-gray-600">Tel: {patient.TELEFONO}</p>}
-      {patient.CONCEPTO && <p className="text-xs text-gray-600">Concepto: {patient.CONCEPTO}</p>}
+      <div className="text-xs space-y-1 flex-grow overflow-hidden">
+        <div className="flex gap-1 items-start">
+          <span className="font-bold text-xs whitespace-nowrap">NHC:</span>
+          <span className="text-xs font-mono truncate">{patient.NHCDEFINITIVO}</span>
+        </div>
+        <div className="flex gap-1 items-start">
+          <span className="font-bold text-xs whitespace-nowrap">Suc:</span>
+          <span className="text-xs truncate">{patient.SUCURSAL}</span>
+        </div>
+        <div className="flex gap-1 items-start">
+          <span className="font-bold text-xs whitespace-nowrap">Tel:</span>
+          <span className="text-xs truncate">{patient.TELEFONO}</span>
+        </div>
+        <div className="flex gap-1 items-start">
+          <span className="font-bold text-xs whitespace-nowrap">FV:</span>
+          <span className="text-xs truncate">{patient.FV}</span>
+        </div>
+        <div className="flex gap-1 items-start">
+          <span className="font-bold text-xs whitespace-nowrap">Conc:</span>
+          <span className="text-xs truncate">{patient.CONCEPTO}</span>
+        </div>
+        <div className="flex gap-1 items-start">
+          <span className="font-bold text-xs whitespace-nowrap">@:</span>
+          <span className="text-xs truncate">{patient.EMAIL}</span>
+        </div>
+      </div>
     </div>
   );
 };
