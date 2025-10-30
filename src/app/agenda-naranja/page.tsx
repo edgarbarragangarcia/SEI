@@ -37,45 +37,87 @@ const KanbanCard = ({
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`p-2 mb-3 bg-white rounded-lg shadow-sm border h-auto min-h-[8rem] flex flex-col ${isDragging ? 'opacity-50' : 'opacity-100'} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+      className={`group p-3 bg-white rounded-xl shadow-sm border h-auto min-h-[8rem] flex flex-col 
+        ${isDragging ? 'opacity-50 rotate-2 scale-105' : 'opacity-100'} 
+        ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : 'hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5'}
+        transition-all duration-200 cursor-pointer`}
       onClick={() => onSelect(patient)}
     >
-      <div className="mb-1 pb-1 border-b flex justify-between items-center">
-        <h4 className="font-semibold text-xs leading-tight">{formattedName}</h4>
-        <input 
-          type="checkbox" 
-          checked={isSelected}
-          onChange={(e) => {
-            e.stopPropagation();
-            onSelect(patient);
-          }}
-          className="h-4 w-4 rounded border-gray-300 text-blue-600"
-        />
+      <div className="mb-2 pb-2 border-b flex justify-between items-center">
+        <h4 className="font-semibold text-xs leading-tight group-hover:text-blue-600 transition-colors duration-200">
+          {formattedName}
+        </h4>
+        <div className="relative">
+          <input 
+            type="checkbox" 
+            checked={isSelected}
+            onChange={(e) => {
+              e.stopPropagation();
+              onSelect(patient);
+            }}
+            className="h-4 w-4 rounded-md border-gray-300 text-blue-600 
+              focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200
+              checked:bg-blue-500 checked:border-transparent"
+          />
+          {isSelected && (
+            <svg
+              className="w-2 h-2 absolute -top-1 -right-1 text-blue-500 fill-current"
+              viewBox="0 0 8 8"
+            >
+              <circle cx="4" cy="4" r="4" />
+            </svg>
+          )}
+        </div>
       </div>
-      <div className="text-xs space-y-1 flex-grow overflow-hidden">
-        <div className="flex gap-1 items-start">
-          <span className="font-bold text-xs whitespace-nowrap">NHC:</span>
-          <span className="text-xs font-mono truncate">{patient.NHCDEFINITIVO}</span>
-        </div>
-        <div className="flex gap-1 items-start">
-          <span className="font-bold text-xs whitespace-nowrap">Suc:</span>
+      <div className="text-xs space-y-2 flex-grow overflow-hidden">
+        <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-2">
+          <div className="flex items-center space-x-1">
+            <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+            </svg>
+            <span className="font-bold text-xs whitespace-nowrap text-gray-600">NHC:</span>
+          </div>
+          <span className="text-xs font-mono truncate text-blue-600 font-semibold">{patient.NHCDEFINITIVO}</span>
+
+          <div className="flex items-center space-x-1">
+            <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <span className="font-bold text-xs whitespace-nowrap text-gray-600">Suc:</span>
+          </div>
           <span className="text-xs truncate">{patient.SUCURSAL}</span>
-        </div>
-        <div className="flex gap-1 items-start">
-          <span className="font-bold text-xs whitespace-nowrap">Tel:</span>
-          <span className="text-xs truncate">{patient.TELEFONO}</span>
-        </div>
-        <div className="flex gap-1 items-start">
-          <span className="font-bold text-xs whitespace-nowrap">FV:</span>
-          <span className="text-xs truncate">{patient.FV}</span>
-        </div>
-        <div className="flex gap-1 items-start">
-          <span className="font-bold text-xs whitespace-nowrap">Conc:</span>
+
+          <div className="flex items-center space-x-1">
+            <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            <span className="font-bold text-xs whitespace-nowrap text-gray-600">Tel:</span>
+          </div>
+          <span className="text-xs truncate hover:text-blue-600 transition-colors duration-200">{patient.TELEFONO}</span>
+
+          <div className="flex items-center space-x-1">
+            <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="font-bold text-xs whitespace-nowrap text-gray-600">FV:</span>
+          </div>
+          <span className="text-xs truncate text-orange-600">{patient.FV}</span>
+
+          <div className="flex items-center space-x-1">
+            <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="font-bold text-xs whitespace-nowrap text-gray-600">Conc:</span>
+          </div>
           <span className="text-xs truncate">{patient.CONCEPTO}</span>
-        </div>
-        <div className="flex gap-1 items-start">
-          <span className="font-bold text-xs whitespace-nowrap">@:</span>
-          <span className="text-xs truncate">{patient.EMAIL}</span>
+
+          <div className="flex items-center space-x-1">
+            <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span className="font-bold text-xs whitespace-nowrap text-gray-600">@:</span>
+          </div>
+          <span className="text-xs truncate text-blue-600 hover:text-blue-800 transition-colors duration-200">{patient.EMAIL}</span>
         </div>
       </div>
     </div>
@@ -116,21 +158,31 @@ const Column = ({
   }));
 
   const colorClass = statusColors[state] || "bg-gray-50 border-gray-200";
-  const selectedCount = selectedPatients.filter(p => p.ESTADO === state).length;
+  // Count selected patients for this column case-insensitively so states from the sheet
+  // (which may be uppercase) still match the column name.
+  const selectedCount = selectedPatients.filter(p => p.ESTADO && p.ESTADO.toUpperCase() === state.toUpperCase()).length;
 
   return (
-    <div ref={drop as unknown as React.Ref<HTMLDivElement>} className={`w-1/6 min-w-0 p-4 rounded-xl shadow-md border ${colorClass} flex flex-col ${isOver ? 'ring-2 ring-blue-400' : ''}`}>
+    <div 
+      ref={drop as unknown as React.Ref<HTMLDivElement>} 
+      className={`w-1/6 min-w-0 p-4 rounded-2xl shadow-lg border ${colorClass} flex flex-col 
+        ${isOver ? 'ring-2 ring-blue-400 shadow-xl scale-[1.02] transition-transform duration-200' : 'transition-transform duration-200'}
+        backdrop-blur-sm bg-white/50`}
+    >
       <div className="mb-4">
-        <h3 className="font-bold text-center text-md uppercase tracking-wider text-gray-600 flex-shrink-0">
-          {state} ({patients.length})
-        </h3>
+        <div className="flex items-center justify-center mb-2">
+          <h3 className="font-bold text-center text-md uppercase tracking-wider text-gray-700 flex-shrink-0 bg-white px-4 py-1 rounded-full shadow-sm">
+            {state} ({patients.length})
+          </h3>
+        </div>
         {selectedCount > 0 && (
-          <div className="mt-2 flex flex-col gap-2">
-            <div className="text-xs text-center text-gray-600">
+          <div className="mt-3 flex flex-col gap-2 bg-blue-50 p-3 rounded-xl border border-blue-100">
+            <div className="text-xs text-center text-blue-700 font-medium">
               {selectedCount} paciente{selectedCount !== 1 ? 's' : ''} seleccionado{selectedCount !== 1 ? 's' : ''}
             </div>
             <select 
-              className="w-full text-xs p-1 rounded border"
+              className="w-full text-sm p-2 rounded-lg border border-blue-200 bg-white shadow-sm
+                focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               onChange={(e) => {
                 if (e.target.value) {
                   onMoveSelected(e.target.value);
@@ -147,7 +199,7 @@ const Column = ({
           </div>
         )}
       </div>
-      <div className="space-y-2 overflow-y-auto flex-grow">
+      <div className="space-y-3 overflow-y-auto flex-grow pr-1 custom-scrollbar">
         {patients.map((patient, index) => (
           <KanbanCard 
             key={index} 
@@ -177,6 +229,7 @@ const KanbanPage = () => {
   const [selectedPatients, setSelectedPatients] = useState<any[]>([]);
   const [selectedFilters, setSelectedFilters] = useState({
     sucursal: '',
+    estado: '',
     fechaInicio: '',
     fechaFin: ''
   });
@@ -227,10 +280,11 @@ const KanbanPage = () => {
   };
 
   const handleFilterSelection = () => {
-    const { sucursal, fechaInicio, fechaFin } = selectedFilters;
+    const { sucursal, estado, fechaInicio, fechaFin } = selectedFilters;
     
     const filteredPatients = patients.filter(patient => {
       if (sucursal && patient.SUCURSAL !== sucursal) return false;
+      if (estado && (!patient.ESTADO || patient.ESTADO.toUpperCase() !== estado.toUpperCase())) return false;
       
       if (fechaInicio || fechaFin) {
         const fv = new Date(patient.FV);
@@ -358,23 +412,43 @@ const KanbanPage = () => {
       <div className="p-8">
         <Tabs defaultValue="kanban">
           <div className="flex flex-col gap-4 mb-6">
-            <div className="flex justify-between items-center">
-              <TabsList>
-                <TabsTrigger value="kanban">Kanban</TabsTrigger>
-                <TabsTrigger value="mensajes">Mensajes</TabsTrigger>
-                <TabsTrigger value="calendario">Calendario</TabsTrigger>
+            <div className="flex justify-between items-center bg-white/50 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-gray-100">
+              <TabsList className="bg-gray-100/50 p-1 rounded-xl">
+                <TabsTrigger value="kanban" className="data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all duration-200 px-6">
+                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                  </svg>
+                  Kanban
+                </TabsTrigger>
+                <TabsTrigger value="mensajes" className="data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all duration-200 px-6">
+                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                  Mensajes
+                </TabsTrigger>
+                <TabsTrigger value="calendario" className="data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all duration-200 px-6">
+                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Calendario
+                </TabsTrigger>
               </TabsList>
-              <input
-                type="text"
-                placeholder="Buscar paciente..."
-                className="px-4 py-2 border rounded-lg"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <div className="relative">
+                <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Buscar paciente..."
+                  className="pl-10 pr-4 py-2 border rounded-xl bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 w-64 shadow-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="flex gap-4 items-center bg-gray-50 p-4 rounded-lg">
+            <div className="flex gap-4 items-center bg-white/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-100">
               <select
-                className="px-3 py-1.5 border rounded"
+                className="px-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 value={selectedFilters.sucursal}
                 onChange={(e) => setSelectedFilters(prev => ({ ...prev, sucursal: e.target.value }))}
               >
@@ -383,34 +457,62 @@ const KanbanPage = () => {
                   <option key={sucursal} value={sucursal}>{sucursal}</option>
                 ))}
               </select>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="date"
-                  className="px-3 py-1.5 border rounded"
-                  value={selectedFilters.fechaInicio}
-                  onChange={(e) => setSelectedFilters(prev => ({ ...prev, fechaInicio: e.target.value }))}
-                />
-                <span>hasta</span>
-                <input
-                  type="date"
-                  className="px-3 py-1.5 border rounded"
-                  value={selectedFilters.fechaFin}
-                  onChange={(e) => setSelectedFilters(prev => ({ ...prev, fechaFin: e.target.value }))}
-                />
+                
+                {/* Estado filter */}
+                <select
+                  className="px-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  value={selectedFilters.estado}
+                  onChange={(e) => setSelectedFilters(prev => ({ ...prev, estado: e.target.value }))}
+                >
+                  <option value="">Todos los estados</option>
+                  {states.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              <div className="flex gap-4 items-center">
+                <div className="relative">
+                  <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <input
+                    type="date"
+                    className="pl-10 pr-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    value={selectedFilters.fechaInicio}
+                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, fechaInicio: e.target.value }))}
+                  />
+                </div>
+                <span className="text-gray-500">hasta</span>
+                <div className="relative">
+                  <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <input
+                    type="date"
+                    className="pl-10 pr-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    value={selectedFilters.fechaFin}
+                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, fechaFin: e.target.value }))}
+                  />
+                </div>
               </div>
               <Button
-                variant="outline"
+                variant="default"
                 onClick={() => handleFilterSelection()}
-                className="ml-2"
+                className="ml-2 rounded-xl px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
               >
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
                 Aplicar Filtros
               </Button>
               {selectedPatients.length > 0 && (
                 <Button
                   variant="ghost"
                   onClick={() => setSelectedPatients([])}
-                  className="ml-auto"
+                  className="ml-auto rounded-xl hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-200"
                 >
+                  <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                   Limpiar Selección ({selectedPatients.length})
                 </Button>
               )}

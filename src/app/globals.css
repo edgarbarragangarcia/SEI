@@ -4,6 +4,28 @@
 
 body {
   font-family: Arial, Helvetica, sans-serif;
+  background-image: linear-gradient(to bottom right, #f0f9ff, #e0f2fe, #dbeafe);
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
 }
 
 @layer base {
