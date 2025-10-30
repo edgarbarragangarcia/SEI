@@ -26,11 +26,12 @@ export const SheetSyncDashboard = () => {
     fetchData();
   }, []);
 
-  const states = ["ATENDIDA", "AGENDADA", "PENDIENTE", "RECHAZA", "NO ASISTIO", "ASISTIO"];
+  // Include PROSPECTO as a state and compare case-insensitively
+  const states = ["PROSPECTO", "ATENDIDA", "AGENDADA", "PENDIENTE", "RECHAZA", "NO ASISTIO", "ASISTIO"];
 
   const statusData = states.map(status => ({
     name: status,
-    count: data.filter((item: any) => item.ESTADO === status).length,
+    count: data.filter((item: any) => (item.ESTADO || '').toString().toUpperCase() === status.toString().toUpperCase()).length,
   }));
 
   const sucursalData = Array.from(new Set(data.map((item: any) => item.SUCURSAL)))
@@ -39,7 +40,7 @@ export const SheetSyncDashboard = () => {
       value: data.filter((item: any) => item.SUCURSAL === sucursal).length,
     }));
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF4560'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF4560', '#7C3AED'];
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><p>Loading dashboard...</p></div>;

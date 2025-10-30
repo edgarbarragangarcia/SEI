@@ -245,7 +245,7 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
   }
 
   if (displayAs === 'cards') {
-    const statuses = ['ATENDIDA', 'AGENDADA', 'PENDIENTE', 'RECHAZA', 'NO ASISTIO', 'ASISTIO'];
+  const statuses = ['PROSPECTO', 'ATENDIDA', 'AGENDADA', 'PENDIENTE', 'RECHAZA', 'NO ASISTIO', 'ASISTIO'];
     const statusColors: Record<string, string> = {
       ATENDIDA: "bg-blue-50 border-blue-200",
       AGENDADA: "bg-yellow-50 border-yellow-200",
@@ -253,6 +253,7 @@ const SheetData = ({ displayAs }: { displayAs: 'table' | 'cards' }) => {
       RECHAZA: "bg-red-50 border-red-200",
       'NO ASISTIO': "bg-slate-100 border-slate-200",
       ASISTIO: "bg-green-50 border-green-200",
+      PROSPECTO: "bg-violet-50 border-violet-200",
     };
 
     const cardsByStatus = statuses.reduce((acc, status) => {

@@ -8,7 +8,7 @@ const ItemTypes = {
   CARD: 'card',
 };
 
-const states = ["ATENDIDA", "Agendada", "PENDIENTE", "RECHAZA", "NO ASISTIO", "ASISTIO"];
+const states = ["PROSPECTO", "ATENDIDA", "Agendada", "PENDIENTE", "RECHAZA", "NO ASISTIO", "ASISTIO"];
 
 const toTitleCase = (str: string) => {
   if (!str) return '';
@@ -29,11 +29,43 @@ const KanbanCard = ({ patient }: { patient: any }) => {
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`p-3 mb-3 bg-white rounded-lg shadow-sm border h-28 flex flex-col justify-center ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+      className={`p-2 mb-3 bg-white rounded-lg shadow-sm border h-32 flex flex-col ${isDragging ? 'opacity-50' : 'opacity-100'}`}
     >
-      <h4 className="font-bold text-sm">{formattedName}</h4>
-      <p className="text-xs text-gray-600">{patient.EMAIL}</p>
-      <p className="text-xs text-gray-800 font-mono">{patient.NHCDEFINITIVO}</p>
+      <h4 className="font-bold text-sm truncate">{formattedName}</h4>
+      <div className="space-y-0.5 mt-1 flex-grow">
+        <div className="flex items-baseline gap-1">
+          <span className="font-bold text-[10px] text-gray-700">NHC:</span>
+          <p className="text-[10px] text-gray-800 font-mono">{patient.NHCDEFINITIVO}</p>
+        </div>
+        {patient.SUCURSAL && (
+          <div className="flex items-baseline gap-1">
+            <span className="font-bold text-[10px] text-gray-700">Sucursal:</span>
+            <p className="text-[10px] text-gray-600">{patient.SUCURSAL}</p>
+          </div>
+        )}
+        {patient.TELEFONO && (
+          <div className="flex items-baseline gap-1">
+            <span className="font-bold text-[10px] text-gray-700">Tel:</span>
+            <p className="text-[10px] text-gray-600">{patient.TELEFONO}</p>
+          </div>
+        )}
+        {patient.FV && (
+          <div className="flex items-baseline gap-1">
+            <span className="font-bold text-[10px] text-gray-700">FV:</span>
+            <p className="text-[10px] text-gray-600">{patient.FV}</p>
+          </div>
+        )}
+        {patient.CONCEPTO && (
+          <div className="flex items-baseline gap-1">
+            <span className="font-bold text-[10px] text-gray-700">Concepto:</span>
+            <p className="text-[10px] text-gray-600">{patient.CONCEPTO}</p>
+          </div>
+        )}
+      </div>
+      <p className="text-[10px] text-gray-600 truncate mt-0.5">{patient.EMAIL}</p>
+      {patient.FV && <p className="text-xs text-gray-600">FV: {patient.FV}</p>}
+      {patient.TELEFONO && <p className="text-xs text-gray-600">Tel: {patient.TELEFONO}</p>}
+      {patient.CONCEPTO && <p className="text-xs text-gray-600">Concepto: {patient.CONCEPTO}</p>}
     </div>
   );
 };
@@ -45,6 +77,7 @@ const statusColors: { [key: string]: string } = {
   RECHAZA: "bg-red-50 border-red-200",
   "NO ASISTIO": "bg-slate-100 border-slate-200",
   ASISTIO: "bg-green-50 border-green-200",
+  PROSPECTO: "bg-violet-50 border-violet-200",
 };
 
 const Column = ({ state, patients, onDrop }: { state: string, patients: any[], onDrop: (p: any, state: string) => void }) => {
