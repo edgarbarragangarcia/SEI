@@ -59,7 +59,7 @@ export const SheetSyncDashboard = () => {
               <p className="text-3xl font-bold">{data.length}</p>
             </CardContent>
           </Card>
-          <Card className="flex-grow flex flex-col bg-gradient-to-br from-rose-50/60 to-teal-50/60 backdrop-blur-sm">
+          <Card className="flex-grow flex flex-col bg-white">
             <CardHeader>
               <CardTitle className="text-md">Distribución por Sucursal</CardTitle>
             </CardHeader>
@@ -88,7 +88,7 @@ export const SheetSyncDashboard = () => {
             </CardContent>
           </Card>
         </div>
-        <Card className="col-span-2 flex flex-col bg-gradient-to-br from-rose-50/60 to-teal-50/60 backdrop-blur-sm">
+  <Card className="col-span-2 flex flex-col bg-white">
           <CardHeader>
             <CardTitle className="text-md">Distribución por Estado</CardTitle>
           </CardHeader>
