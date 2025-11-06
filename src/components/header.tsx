@@ -13,8 +13,24 @@ export function Header() {
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95vw] max-w-7xl">
       <header className="flex items-center justify-between h-16 px-6 rounded-full bg-gradient-to-r from-rose-100 to-teal-100 text-gray-800 shadow-lg">
         <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center justify-center w-10 h-10 bg-white/50 rounded-full backdrop-blur-sm">
-            <Sheet className="h-6 w-6 text-black" />
+          <Link href="/" className="flex items-center justify-center w-10 h-10 bg-white/50 rounded-full backdrop-blur-sm" aria-label="Home">
+            {/* Modern inline SVG logo with subtle gradient */}
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+              <defs>
+                <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#4F46E5" />
+                  <stop offset="100%" stopColor="#06B6D4" />
+                </linearGradient>
+              </defs>
+              <rect x="2" y="2" width="20" height="20" rx="4" fill="url(#logoGrad)" opacity="0.12" />
+              <g transform="translate(4,4)">
+                <rect x="0" y="0" width="6" height="6" rx="1.2" fill="#ffffff" opacity="0.95" />
+                <rect x="8" y="0" width="6" height="6" rx="1.2" fill="#ffffff" opacity="0.8" />
+                <rect x="0" y="8" width="6" height="6" rx="1.2" fill="#ffffff" opacity="0.8" />
+                <rect x="8" y="8" width="6" height="6" rx="1.2" fill="#ffffff" opacity="0.95" />
+              </g>
+              <rect x="3.5" y="3.5" width="17" height="17" rx="3.2" stroke="url(#logoGrad)" strokeWidth="1.2" opacity="0.9" />
+            </svg>
           </Link>
         </div>
         
