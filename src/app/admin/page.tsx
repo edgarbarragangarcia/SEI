@@ -23,13 +23,22 @@ export default function AdminPage() {
     if (status === 'authenticated') {
       fetch('/api/users')
         .then(res => res.json())
-        .then(data => {
-          if (data) {
+        .then((data) => {
+          // The API returns an array of rows on success, or an object with an error on failure.
+          if (Array.isArray(data)) {
             // Filter out duplicate users based on email (index 0)
             const uniqueUsers = Array.from(new Map(data.map((user: any) => [user[0], user])).values());
             setUsers(uniqueUsers);
             setInitialUsers(JSON.parse(JSON.stringify(uniqueUsers)));
+          } else {
+            console.error('Unexpected /api/users response:', data);
+            // Show a toast to the user if fetching failed
+            toast?.({ title: 'Error', description: 'Failed to load users. Check server logs.', variant: 'destructive' });
           }
+        })
+        .catch((err) => {
+          console.error('Error fetching /api/users:', err);
+          toast?.({ title: 'Error', description: 'Failed to load users. Check server logs.', variant: 'destructive' });
         });
     }
   }, [status]);

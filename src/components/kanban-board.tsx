@@ -45,7 +45,7 @@ const Column = ({ state, patients, onDrop }: { state: string, patients: any[], o
   }));
 
   return (
-    <div ref={drop as unknown as React.Ref<HTMLDivElement>} className={`w-1/5 p-4 bg-gray-100 rounded-lg ${isOver ? 'bg-gray-200' : ''}`}>
+    <div ref={drop as unknown as React.Ref<HTMLDivElement>} className={`w-1/5 p-4 bg-white rounded-lg ${isOver ? 'bg-gray-50' : ''}`}>
       <h3 className="font-bold mb-4 text-center">{state}</h3>
       {patients.map((patient, index) => (
         <Card key={index} patient={patient} />
