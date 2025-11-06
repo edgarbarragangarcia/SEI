@@ -48,7 +48,6 @@ export const SheetSyncDashboard = () => {
 
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-8rem)] flex flex-col">
-      <h1 className="text-2xl font-bold text-center mb-4">Dashboard de Pacientes</h1>
       
       <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="col-span-1 flex flex-col gap-4">
