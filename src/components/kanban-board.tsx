@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { Header } from "@/components/header";
+import { ScheduleAppointmentModal } from "./schedule-appointment-modal";
 
 const ItemTypes = {
   CARD: 'card',
@@ -57,6 +58,8 @@ const Column = ({ state, patients, onDrop }: { state: string, patients: any[], o
 export default function KanbanBoard() {
   const [patients, setPatients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedPatients, setSelectedPatients] = useState<any[]>([]);
   const { data: session, status } = useSession();
   const { toast } = useToast();
 
@@ -112,6 +115,13 @@ export default function KanbanBoard() {
 
   const handleDrop = async (patient: any, newState: string) => {
     try {
+      // Si el estado nuevo es "ATENDIDA" y el estado anterior es "PROSPECTO"
+      if (newState === "ATENDIDA" && patient.estado === "PROSPECTO") {
+        setSelectedPatients([patient]);
+        setIsScheduleModalOpen(true);
+        return; // Esperamos a que el usuario complete el formulario
+      }
+
       const response = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,6 +140,64 @@ export default function KanbanBoard() {
       setPatients(prev => prev.map(p => p.originalIndex === patient.originalIndex ? { ...p, estado: newState } : p));
     } catch (error) {
       toast({ title: 'Error', description: 'No se pudo actualizar el estado del paciente.', variant: 'destructive' });
+    }
+  };
+
+  const handleScheduleAppointment = async (appointmentData: { date: Date; time: string; message: string }) => {
+    try {
+      // 1. Actualizar el estado en Google Sheets
+      const updateStatePromises = selectedPatients.map(patient =>
+        fetch('/api/sheets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rowIndex: patient.originalIndex,
+            header: 'estado',
+            value: 'ATENDIDA',
+          }),
+        })
+      );
+
+      // 2. Crear evento en Google Calendar
+      const calendarPromise = fetch('/api/calendar/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          summary: `Cita: ${selectedPatients.map(p => `${p.nombre} ${p.apellidop}`).join(', ')}`,
+          description: appointmentData.message,
+          start: {
+            dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${appointmentData.time}:00`,
+            timeZone: 'America/Mexico_City',
+          },
+          end: {
+            dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${
+              appointmentData.time.split(':')[0]}:${
+              (parseInt(appointmentData.time.split(':')[1]) + 30).toString().padStart(2, '0')}:00`,
+            timeZone: 'America/Mexico_City',
+          },
+          attendees: selectedPatients.map(p => ({ email: p.email })),
+        }),
+      });
+
+      await Promise.all([...updateStatePromises, calendarPromise]);
+
+      // Actualizar el estado local de los pacientes
+      setPatients(prev => prev.map(p => 
+        selectedPatients.some(sp => sp.originalIndex === p.originalIndex)
+          ? { ...p, estado: 'ATENDIDA' }
+          : p
+      ));
+
+      toast({ 
+        title: 'Éxito', 
+        description: 'La cita ha sido programada y los pacientes han sido notificados.' 
+      });
+    } catch (error) {
+      toast({ 
+        title: 'Error', 
+        description: 'No se pudo programar la cita. Por favor intente de nuevo.', 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -159,6 +227,13 @@ export default function KanbanBoard() {
           ))}
         </div>
       </DndProvider>
+
+      <ScheduleAppointmentModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        patients={selectedPatients}
+        onSchedule={handleScheduleAppointment}
+      />
     </>
   );
 }

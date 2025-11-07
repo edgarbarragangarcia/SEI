@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { ScheduleAppointmentModal } from '@/components/schedule-appointment-modal';
+import { useToast } from "@/hooks/use-toast";
+import { useAppStore } from '@/store/app-store';
 
 const ItemTypes = {
   CARD: 'card',
@@ -228,7 +231,6 @@ const Column = ({
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 
@@ -252,6 +254,8 @@ const KanbanPage = () => {
     idioma: ''
   });
   const { toast } = useToast();
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [patientsToSchedule, setPatientsToSchedule] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -593,6 +597,72 @@ const KanbanPage = () => {
 
   const handleCancelConfirm = () => {
     setConfirmMove(null);
+  };
+
+  const handleScheduleAppointment = async (appointmentData: { date: Date; time: string; message: string }) => {
+    try {
+      // 1. Actualizar el estado en Google Sheets
+      const updateStatePromises = patientsToSchedule.map(patient =>
+        fetch('/api/sheets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            NHCDEFINITIVO: patient.NHCDEFINITIVO,
+            ESTADO: 'ATENDIDA',
+            NOMBRE: patient.NOMBRE,
+            APELLIDOP: patient.APELLIDOP,
+            APELLIDOM: patient.APELLIDOM,
+            TELEFONO: patient.TELEFONO,
+          }),
+        })
+      );
+
+      // 2. Crear evento en Google Calendar
+      const calendarPromise = fetch('/api/calendar/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          summary: `Cita: ${patientsToSchedule.map(p => `${p.NOMBRE} ${p.APELLIDOP}`).join(', ')}`,
+          description: appointmentData.message,
+          start: {
+            dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${appointmentData.time}:00`,
+            timeZone: 'America/Mexico_City',
+          },
+          end: {
+            dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${
+              appointmentData.time.split(':')[0]}:${
+              (parseInt(appointmentData.time.split(':')[1]) + 30).toString().padStart(2, '0')}:00`,
+            timeZone: 'America/Mexico_City',
+          },
+          attendees: patientsToSchedule.map(p => ({ email: p.EMAIL })),
+        }),
+      });
+
+      await Promise.all([...updateStatePromises, calendarPromise]);
+
+      // Actualizar el estado local de los pacientes
+      setPatients(prev => prev.map(p => 
+        patientsToSchedule.some(sp => sp.NHCDEFINITIVO === p.NHCDEFINITIVO)
+          ? { ...p, ESTADO: 'ATENDIDA' }
+          : p
+      ));
+
+      toast({ 
+        title: 'Éxito', 
+        description: 'La cita ha sido programada y los pacientes han sido notificados.' 
+      });
+
+      setIsScheduleModalOpen(false);
+      setPatientsToSchedule([]);
+
+    } catch (error) {
+      console.error('Error al programar la cita:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'No se pudo programar la cita. Por favor intente de nuevo.', 
+        variant: 'destructive' 
+      });
+    }
   };
 
   const handleDrop = async (patient: any, newState: string) => {

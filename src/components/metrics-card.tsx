@@ -11,6 +11,7 @@ type MetricsCardProps = {
   change?: string;
   color?: 'green' | 'red' | 'blue' | 'orange' | 'teal' | 'purple';
   sparkline?: number[];
+  description?: string;
 };
 
 function Sparkline({ data = [], color = '#10b981' }: { data?: number[]; color?: string }) {
@@ -34,7 +35,7 @@ function Sparkline({ data = [], color = '#10b981' }: { data?: number[]; color?: 
   );
 }
 
-export const MetricsCard: React.FC<MetricsCardProps> = ({ title, value, change, color = 'green', sparkline }) => {
+export const MetricsCard: React.FC<MetricsCardProps> = ({ title, value, change, color = 'green', sparkline, description }) => {
   const colorMap: Record<string, string> = {
     green: '#10b981',
     red: '#ef4444',
@@ -46,21 +47,31 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({ title, value, change, 
 
   return (
     <motion.div whileHover={{ y: -6 }} className="w-full">
-      <Card className={cn('h-full') as string}>
-        <CardHeader>
+      <Card className={cn('h-full transition-all hover:shadow-lg') as string}>
+        <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-semibold">{value}</div>
-              {change && (
-                <div className="text-sm text-muted-foreground mt-1">{change}</div>
-              )}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-semibold">{value}</div>
+                {change && (
+                  <div className={cn(
+                    "text-sm mt-1",
+                    change.startsWith('+') ? "text-green-600" : "text-red-600"
+                  )}>{change}</div>
+                )}
+              </div>
+              <div className="ml-4">
+                <Sparkline data={sparkline} color={colorMap[color]} />
+              </div>
             </div>
-            <div className="ml-4">
-              <Sparkline data={sparkline} color={colorMap[color]} />
-            </div>
+            {description && (
+              <div className="text-sm text-muted-foreground border-t pt-2">
+                {description}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
