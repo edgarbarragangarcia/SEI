@@ -236,6 +236,7 @@ const KanbanPage = () => {
   const { data: session } = useSession();
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allowedBranches, setAllowedBranches] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [messages, setMessages] = useState<{ [key: string]: string }>({});
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -297,8 +298,9 @@ const KanbanPage = () => {
           // data rows: [email, name, role, branches]
           const userRow = data.find((r: any) => r[0] === session.user.email);
           if (userRow && userRow[3]) {
-            const allowed = userRow[3].toString().split(',').map((s: string) => s.trim()).filter(Boolean);
-            setSelectedFilters(prev => ({ ...prev, sucursal: prev.sucursal }));
+            // normalize to uppercase trimmed values for robust matching
+            const allowed = userRow[3].toString().split(',').map((s: string) => s.trim().toUpperCase()).filter(Boolean);
+            setAllowedBranches(allowed);
             // store allowed branches in localStorage for quick access
             localStorage.setItem('allowedBranches', JSON.stringify(allowed));
           }
@@ -476,6 +478,14 @@ const KanbanPage = () => {
     );
   });
 
+  // Enforce allowedBranches: if the logged-in user has allowed branches, filter displayed patients
+  const visiblePatients = allowedBranches && allowedBranches.length > 0
+    ? filteredPatients.filter(p => {
+        const s = (p.SUCURSAL || '').toString().trim().toUpperCase();
+        return s && allowedBranches.includes(s);
+      })
+    : filteredPatients;
+
   if (loading) {
     return (
         <div className="flex items-center justify-center h-screen">
@@ -534,7 +544,7 @@ const KanbanPage = () => {
                 onChange={(e) => setSelectedFilters(prev => ({ ...prev, sucursal: e.target.value }))}
               >
                 <option value="">Todas las sucursales</option>
-                {Array.from(new Set(patients.map(p => p.SUCURSAL))).map(sucursal => (
+                {(allowedBranches && allowedBranches.length > 0 ? allowedBranches : Array.from(new Set(patients.map(p => p.SUCURSAL).map((s:any)=> (s||'').toString().toUpperCase())))).map((sucursal:any) => (
                   <option key={sucursal} value={sucursal}>{sucursal}</option>
                 ))}
               </select>
@@ -617,7 +627,7 @@ const KanbanPage = () => {
                 <Column
                   key={state}
                   state={state}
-                  patients={filteredPatients.filter((p) => p.ESTADO && p.ESTADO.toUpperCase() === state.toUpperCase())}
+                  patients={visiblePatients.filter((p) => p.ESTADO && p.ESTADO.toUpperCase() === state.toUpperCase())}
                   onDrop={handleDrop}
                   selectedPatients={selectedPatients}
                   onSelect={handlePatientSelect}
