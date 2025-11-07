@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -136,8 +137,8 @@ export default function AdminPage() {
         Edita roles y sucursales de los usuarios. Los cambios se guardan en la hoja de Google.
         </CardDescription>
       </CardHeader>
-            <CardContent>
-                <div className="relative w-full overflow-auto rounded-md border">
+            <CardContent className="h-[70vh] flex flex-col">
+                <div className="relative w-full flex-1 overflow-auto rounded-md border">
                     <Table>
                         <TableHeader>
             <TableRow>
@@ -190,24 +191,29 @@ export default function AdminPage() {
                                             );
                                           })()}
                                         </summary>
-                                        <div className="absolute right-0 top-full z-50 mt-2 bg-white border rounded-md p-3 shadow-lg min-w-[220px] max-w-[420px] max-h-[240px] overflow-auto">
+                                        <div className="absolute right-0 top-full z-50 mt-2 bg-white border rounded-md p-4 shadow-lg min-w-[500px]">
+                                          <div className="grid grid-cols-3 gap-3">
                                           {[...sucursales, 'Todas'].map((branch) => {
                                             const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
                                             const checked = current.includes(branch);
                                             return (
-                                              <label key={branch} className="flex items-center gap-2 mb-2">
+                                              <label key={branch} 
+                                                className={`flex items-center justify-center gap-2 p-2 rounded-lg border transition-colors
+                                                  ${checked ? 'bg-blue-50 border-blue-200 text-blue-700' : 'hover:bg-gray-50'}`}>
                                                 <input
                                                   type="checkbox"
+                                                  className="hidden"
                                                   checked={checked}
                                                   onChange={() => {
                                                     const next = checked ? current.filter((c: string) => c !== branch) : [...current, branch];
                                                     handleSucursalChange(user[0], next.join(', '));
                                                   }}
                                                 />
-                                                <span className="text-sm">{branch}</span>
+                                                <span className="text-sm font-medium">{branch}</span>
                                               </label>
                                             );
                                           })}
+                                          </div>
                                         </div>
                                       </details>
                                       <div className="text-xs text-muted-foreground mt-1 truncate">{(user[3] || '') && (user[3] || '')}</div>
@@ -218,7 +224,7 @@ export default function AdminPage() {
                         </TableBody>
                     </Table>
                 </div>
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-end mt-2 sticky bottom-0 bg-white py-2">
                     <Button onClick={handleSaveChanges} disabled={!hasChanges || isSaving}>
                       {isSaving ? 'Saving...' : 'Save Changes'}
                     </Button>
