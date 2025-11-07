@@ -54,6 +54,13 @@ export default function AdminPage() {
     }
   }, [status]);
 
+  // Ensure body scroll is restored when leaving the page
+  useEffect(() => {
+    return () => {
+      try { document.body.style.overflow = ''; } catch (e) { /* ignore */ }
+    };
+  }, []);
+
   if (status === 'loading') {
     return <div>Loading...</div>;
   }
@@ -153,31 +160,57 @@ export default function AdminPage() {
                                     </SelectContent>
                                     </Select>
                                 </TableCell>
-                                <TableCell>
-                                    {/* Inline checkbox list inside a details panel to allow clicking to toggle branches */}
-                                    <details className="relative">
-                                      <summary className="cursor-pointer px-2 py-1 border rounded-md bg-white shadow-sm max-w-[300px] truncate">{(user[3] || 'Seleccionar...')}</summary>
-                                      <div className="absolute z-10 mt-2 bg-white border rounded-md p-3 shadow-lg min-w-[220px]">
-                                        {['AGUASCALIENTES','TOLUCA','CIUDAD DE MEXICO','GUADALAJARA','Todas'].map((branch) => {
-                                          const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
-                                          const checked = current.includes(branch);
-                                          return (
-                                            <label key={branch} className="flex items-center gap-2 mb-2">
-                                              <input
-                                                type="checkbox"
-                                                checked={checked}
-                                                onChange={() => {
-                                                  const next = checked ? current.filter((c: string) => c !== branch) : [...current, branch];
-                                                  handleSucursalChange(user[0], next.join(', '));
-                                                }}
-                                              />
-                                              <span className="text-sm">{branch}</span>
-                                            </label>
-                                          );
-                                        })}
-                                      </div>
-                                    </details>
-                  <div className="text-xs text-muted-foreground mt-1 max-w-[360px] truncate">{(user[3] || '').toString()}</div>
+                                <TableCell className="align-top">
+                                    {/* Compact branch selector: chips in the summary and absolute dropdown so table doesn't reflow */}
+                                    <div className="relative min-w-[220px] max-w-[460px]">
+                                      <details className="relative" onToggle={(e) => {
+                                        const el = e.currentTarget as HTMLDetailsElement;
+                                        if (el.open) {
+                                          try { document.body.style.overflow = 'hidden'; } catch (err) {}
+                                        } else {
+                                          try { document.body.style.overflow = ''; } catch (err) {}
+                                        }
+                                      }}>
+                                        <summary className="cursor-pointer px-2 py-2 border rounded-md bg-white shadow-sm flex items-center gap-2 min-h-[38px]">
+                                          {/* chips */}
+                                          {(() => {
+                                            const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
+                                            if (current.length === 0) return <span className="text-sm text-muted-foreground">Seleccionar...</span>;
+                                            const shown = current.slice(0, 3);
+                                            return (
+                                              <div className="flex items-center gap-2 overflow-hidden">
+                                                {shown.map((b: string) => (
+                                                  <span key={b} className="inline-flex items-center bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs whitespace-nowrap">{b}</span>
+                                                ))}
+                                                {current.length > 3 && (
+                                                  <span className="inline-flex items-center bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">+{current.length - 3}</span>
+                                                )}
+                                              </div>
+                                            );
+                                          })()}
+                                        </summary>
+                                        <div className="absolute right-0 top-full z-50 mt-2 bg-white border rounded-md p-3 shadow-lg min-w-[220px] max-w-[420px] max-h-[240px] overflow-auto">
+                                          {['AGUASCALIENTES','TOLUCA','CIUDAD DE MEXICO','GUADALAJARA','Todas'].map((branch) => {
+                                            const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
+                                            const checked = current.includes(branch);
+                                            return (
+                                              <label key={branch} className="flex items-center gap-2 mb-2">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={checked}
+                                                  onChange={() => {
+                                                    const next = checked ? current.filter((c: string) => c !== branch) : [...current, branch];
+                                                    handleSucursalChange(user[0], next.join(', '));
+                                                  }}
+                                                />
+                                                <span className="text-sm">{branch}</span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      </details>
+                                      <div className="text-xs text-muted-foreground mt-1 truncate">{(user[3] || '') && (user[3] || '')}</div>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}

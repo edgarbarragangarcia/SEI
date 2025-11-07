@@ -242,6 +242,8 @@ const KanbanPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedPatients, setSelectedPatients] = useState<any[]>([]);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [confirmMove, setConfirmMove] = useState<{ patient: any; newState: string } | null>(null);
+  const [confirmSaving, setConfirmSaving] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     sucursal: '',
     estado: '',
@@ -256,53 +258,98 @@ const KanbanPage = () => {
       setLoading(true);
       try {
         const response = await fetch('/api/get-data');
-        const result = await response.json();
         if (!response.ok) {
-          throw new Error(result.details || 'Failed to fetch data');
+          const errorData = await response.json();
+          throw new Error(errorData.details || `HTTP error! status: ${response.status}`);
         }
+        const result = await response.json();
         setPatients(Array.isArray(result) ? result : [result]);
-      } catch (err) {
-        console.error(err);
+      } catch (err: any) {
+        console.error('Error fetching data:', err);
+        toast({
+          title: "Error",
+          description: err.message || "Failed to fetch data. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    const loadMessages = () => {
-      const savedMessages = localStorage.getItem('kanbanMessages');
-      if (savedMessages) {
-        setMessages(JSON.parse(savedMessages));
-      } else {
-        // Initialize with empty strings if nothing is saved
-        const initialMessages = states.reduce((acc, state) => ({ ...acc, [state]: '' }), {});
-        setMessages(initialMessages);
-      }
-      // restore selected filters (including idioma) if saved
-      const savedFilters = localStorage.getItem('kanbanFilters');
-      if (savedFilters) {
-        try {
-          setSelectedFilters(JSON.parse(savedFilters));
-        } catch (e) {
-          console.warn('Failed to parse saved filters', e);
+    const loadStoredData = () => {
+      if (typeof window === 'undefined') return;
+
+      // Load saved messages
+      try {
+        const savedMessages = localStorage.getItem('kanbanMessages');
+        if (savedMessages) {
+          setMessages(JSON.parse(savedMessages));
+        } else {
+          const initialMessages = states.reduce((acc, state) => ({ ...acc, [state]: '' }), {});
+          setMessages(initialMessages);
         }
+
+        // Load saved filters
+        const savedFilters = localStorage.getItem('kanbanFilters');
+        if (savedFilters) {
+          setSelectedFilters(JSON.parse(savedFilters));
+        }
+      } catch (e) {
+        console.warn('Failed to load saved data from localStorage', e);
       }
     };
+
+    fetchData();
+    loadStoredData();
 
     // fetch users sheet to determine allowed branches for current user
     const fetchAllowedBranches = async () => {
       if (!session?.user?.email) return;
       try {
         const res = await fetch('/api/users');
+        if (!res.ok) {
+          throw new Error(`Failed to fetch users: ${res.status} ${res.statusText}`);
+        }
         const data = await res.json();
-        if (Array.isArray(data)) {
-          // data rows: [email, name, role, branches]
-          const userRow = data.find((r: any) => r[0] === session.user.email);
-          if (userRow && userRow[3]) {
-            // normalize to uppercase trimmed values for robust matching
-            const allowed = userRow[3].toString().split(',').map((s: string) => s.trim().toUpperCase()).filter(Boolean);
+        if (Array.isArray(data) && data.length > 1) {  // Skip header row
+          // Find user's row (email is in column A)
+          const userRow = data.find((r: string[]) => r[0] === session.user.email);
+          if (userRow && userRow[3]) {  // Column D (index 3) contains branches
+            const branchesStr = userRow[3].toString();
+            console.log('Raw branches from sheet:', branchesStr);
+            
+            // Split and normalize all branch names
+            const allowed = branchesStr
+              .split(/[,;]/)  // Split on comma or semicolon
+              .map((s: string) => s.trim())
+              .filter(Boolean)
+              .map((s: string) => {
+                const branch = s.toUpperCase();
+                // Normalize variations to standard names
+                switch (branch) {
+                  case 'AGU':
+                  case 'AGUASCAL':
+                    return 'AGUASCALIENTES';
+                  case 'TOL':
+                  case 'TOLUC':
+                    return 'TOLUCA';
+                  case 'CDMX':
+                  case 'CD MEX':
+                    return 'CIUDAD DE MEXICO';
+                  case 'GDL':
+                    return 'GUADALAJARA';
+                  default:
+                    return branch;
+                }
+              });
+            
+            console.log('Normalized allowed branches:', allowed);
+            
             setAllowedBranches(allowed);
-            // store allowed branches in localStorage for quick access
-            localStorage.setItem('allowedBranches', JSON.stringify(allowed));
+            
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('allowedBranches', JSON.stringify(allowed));
+            }
           }
         }
       } catch (e) {
@@ -311,16 +358,17 @@ const KanbanPage = () => {
     };
 
     fetchData();
-    loadMessages();
     fetchAllowedBranches();
-  }, []);
+  }, [session?.user?.email]);
 
   // persist filters when they change (debounced could be used but keep simple)
   useEffect(() => {
-    try {
-      localStorage.setItem('kanbanFilters', JSON.stringify(selectedFilters));
-    } catch (e) {
-      // ignore
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('kanbanFilters', JSON.stringify(selectedFilters));
+      } catch (e) {
+        console.warn('Failed to save filters to localStorage', e);
+      }
     }
   }, [selectedFilters]);
 
@@ -329,35 +377,104 @@ const KanbanPage = () => {
   };
 
   const saveMessages = () => {
-    localStorage.setItem('kanbanMessages', JSON.stringify(messages));
-    toast({
-      title: "Mensajes guardados",
-      description: "Tus mensajes se han guardado correctamente.",
-    });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('kanbanMessages', JSON.stringify(messages));
+      toast({
+        title: "Mensajes guardados",
+        description: "Tus mensajes se han guardado correctamente.",
+      });
+    }
   };
 
   const handleFilterSelection = () => {
+    console.log('Current filters:', selectedFilters);
+    console.log('Current allowed branches:', allowedBranches);
     const { sucursal, estado, fechaInicio, fechaFin, idioma } = selectedFilters;
     
     const filteredPatients = patients.filter(patient => {
-      // respect allowed branches if present in localStorage
-      const allowedBranchesStr = localStorage.getItem('allowedBranches');
-      if (allowedBranchesStr) {
-        try {
-          const allowedBranches = JSON.parse(allowedBranchesStr) as string[];
-          if (allowedBranches.length > 0 && patient.SUCURSAL && !allowedBranches.includes(patient.SUCURSAL)) return false;
-        } catch (e) {
-          // ignore
+      // Handle branch filtering
+      const normalizeBranch = (branch: string): string => {
+        if (!branch) return '';
+        branch = branch.trim().toUpperCase();
+        // Normalize common branch name variations
+        const branchMappings: Record<string, string> = {
+          'AGU': 'AGUASCALIENTES',
+          'AGUASCAL': 'AGUASCALIENTES',
+          'TOL': 'TOLUCA',
+          'TOLUC': 'TOLUCA',
+          'CDMX': 'CIUDAD DE MEXICO',
+          'CD MEX': 'CIUDAD DE MEXICO',
+          'GDL': 'GUADALAJARA'
+        };
+        return branchMappings[branch] || branch;
+      };
+
+      const patientBranch = normalizeBranch(patient.SUCURSAL || '');
+      console.log('Processing patient branch:', patientBranch);
+
+      // First check branch access
+      let branchAllowed = false;
+
+      // Normalize allowedBranches to be safe
+      const normalizedAllowed = (allowedBranches || []).map(a => (a || '').toString().trim().toUpperCase());
+
+      if (sucursal === 'Todas las sucursales') {
+        // If the user has an explicit 'TODAS' (or similar) entry, treat as global access
+        const hasAll = normalizedAllowed.some(a => a.includes('TODAS') || a === 'ALL');
+        if (hasAll) {
+          branchAllowed = true;
+        } else {
+          // Otherwise allow only the branches explicitly listed in allowedBranches
+          branchAllowed = normalizedAllowed.includes(patientBranch);
         }
+        console.log('Todas las sucursales check:', {
+          patientBranch,
+          normalizedAllowed,
+          hasAll: normalizedAllowed.some(a => a.includes('TODAS') || a === 'ALL'),
+          allowed: branchAllowed
+        });
+      } else if (sucursal) {
+        // When specific branches are selected in the UI
+        const selectedBranches = sucursal
+          .split(',')
+          .map(b => normalizeBranch(b))
+          .filter(Boolean);
+
+        // intersect selectedBranches with allowedBranches (user cannot see branches they don't have access to)
+        const effectiveSelected = selectedBranches.filter(sb => normalizedAllowed.includes(sb) || normalizedAllowed.some(a => a.includes('TODAS') || a === 'ALL'));
+        branchAllowed = effectiveSelected.includes(patientBranch);
+        console.log('Specific branch check:', {
+          patientBranch,
+          selectedBranches,
+          normalizedAllowed,
+          effectiveSelected,
+          allowed: branchAllowed
+        });
+      } else {
+        // When no branch filter is selected, check against allowed branches
+        const hasAll = normalizedAllowed.some(a => a.includes('TODAS') || a === 'ALL');
+        branchAllowed = hasAll || normalizedAllowed.includes(patientBranch);
+        console.log('Default branch check:', {
+          patientBranch,
+          normalizedAllowed,
+          hasAll,
+          allowed: branchAllowed
+        });
       }
-      if (sucursal && patient.SUCURSAL !== sucursal) return false;
-      if (estado && (!patient.ESTADO || patient.ESTADO.toUpperCase() !== estado.toUpperCase())) return false;
+
+      if (!branchAllowed) return false;
+
+      // Then apply other filters
+      if (estado && (!patient.ESTADO || patient.ESTADO.toUpperCase() !== estado.toUpperCase())) {
+        return false;
+      }
       
       if (fechaInicio || fechaFin) {
         const fv = new Date(patient.FV);
         if (fechaInicio && fv < new Date(fechaInicio)) return false;
         if (fechaFin && fv > new Date(fechaFin)) return false;
       }
+
       if (idioma) {
         const raw = (patient.IDIOMA || patient.idioma || patient.LENGUAJE || patient.LANGUAGE || '').toString().toLowerCase();
         const normalizeLang = (s: string) => {
@@ -437,7 +554,59 @@ const KanbanPage = () => {
     }
   };
 
+  const handleAcceptConfirm = async () => {
+    if (!confirmMove) return;
+    setConfirmSaving(true);
+    const patient = confirmMove.patient;
+    const newState = confirmMove.newState;
+
+    // perform update and optimistic UI
+    setPatients((prevPatients) =>
+      prevPatients.map((p) =>
+        p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? { ...p, ESTADO: newState } : p
+      )
+    );
+
+    try {
+      await fetch('/api/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          NHCDEFINITIVO: patient.NHCDEFINITIVO,
+          ESTADO: newState,
+          NOMBRE: patient.NOMBRE,
+          APELLIDOP: patient.APELLIDOP,
+          APELLIDOM: patient.APELLIDOM,
+          TELEFONO: patient.TELEFONO,
+        }),
+      });
+
+      toast({ title: 'Cambio aplicado', description: `El paciente ${patient.NOMBRE} se movió a ${newState}.` });
+    } catch (err) {
+      console.error('Failed to update confirmed change:', err);
+      toast({ title: 'Error', description: 'No se pudo guardar el cambio.', variant: 'destructive' });
+    } finally {
+      setConfirmSaving(false);
+      setConfirmMove(null);
+    }
+  };
+
+  const handleCancelConfirm = () => {
+    setConfirmMove(null);
+  };
+
   const handleDrop = async (patient: any, newState: string) => {
+    // If moving from PROSPECTO -> ATENDIDA require explicit confirmation
+    const fromState = (patient.ESTADO || '').toString().toUpperCase();
+    const toState = (newState || '').toString().toUpperCase();
+
+    if (fromState === 'PROSPECTO' && toState === 'ATENDIDA') {
+      // show confirmation UI instead of immediately updating
+      setConfirmMove({ patient, newState: toState });
+      return;
+    }
+
+    // default immediate update
     setPatients((prevPatients) =>
       prevPatients.map((p) =>
         p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? { ...p, ESTADO: newState } : p
@@ -677,6 +846,20 @@ const KanbanPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+      {confirmMove && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg flex items-center gap-4">
+            <div className="max-w-xs">
+              <div className="font-medium">Confirmar cambio</div>
+              <div className="text-sm">¿Mover a <strong>{confirmMove.newState}</strong> al paciente <strong>{toTitleCase((confirmMove.patient?.NOMBRE||'').toString())}</strong>?</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleAcceptConfirm} disabled={confirmSaving}>{confirmSaving ? 'Guardando...' : 'Aceptar'}</Button>
+              <Button variant="ghost" onClick={handleCancelConfirm}>Cancelar</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DndProvider>
   );
 };
