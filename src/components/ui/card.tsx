@@ -9,8 +9,10 @@ const Card = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <motion.div
     ref={ref}
-    initial={{ opacity: 0, y: 6 }}
-    animate={{ opacity: 1, y: 0 }}
+    // avoid setting an initial animation on SSR which injects inline styles
+    // (opacity:0) that persist if client JS fails to hydrate. Use initial={false}
+    // so the element renders visible on the server and still supports hover animations.
+    initial={false}
     whileHover={{ y: -4, scale: 1.01 }}
     transition={{ duration: 0.18 }}
     className={cn(

@@ -44,9 +44,20 @@ const KanbanCard = ({
       onClick={() => onSelect(patient)}
     >
       <div className="mb-2 pb-2 border-b flex justify-between items-center">
-        <h4 className="font-semibold text-[12px] leading-tight group-hover:text-blue-600 transition-colors duration-200">
-          {formattedName}
-        </h4>
+        <div className="flex items-center gap-2">
+          <h4 className="font-semibold text-[12px] leading-tight group-hover:text-blue-600 transition-colors duration-200">
+            {formattedName}
+          </h4>
+          {/* Language badge */}
+          {(() => {
+            const rawLang = (patient.IDIOMA || patient.idioma || patient.LENGUAJE || patient.LANGUAGE || '')?.toString() || '';
+            const t = rawLang.toLowerCase();
+            const badge = t.includes('es') || t.includes('esp') || t.includes('españ') || t.includes('spanish') ? 'ES' : (t.includes('en') || t.includes('eng') || t.includes('ingl') || t.includes('english') ? 'EN' : '');
+            return badge ? (
+              <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">{badge}</span>
+            ) : null;
+          })()}
+        </div>
         <div className="relative">
           <input 
             type="checkbox" 
@@ -231,7 +242,8 @@ const KanbanPage = () => {
     sucursal: '',
     estado: '',
     fechaInicio: '',
-    fechaFin: ''
+    fechaFin: '',
+    idioma: ''
   });
   const { toast } = useToast();
 
@@ -261,11 +273,29 @@ const KanbanPage = () => {
         const initialMessages = states.reduce((acc, state) => ({ ...acc, [state]: '' }), {});
         setMessages(initialMessages);
       }
+      // restore selected filters (including idioma) if saved
+      const savedFilters = localStorage.getItem('kanbanFilters');
+      if (savedFilters) {
+        try {
+          setSelectedFilters(JSON.parse(savedFilters));
+        } catch (e) {
+          console.warn('Failed to parse saved filters', e);
+        }
+      }
     };
 
     fetchData();
     loadMessages();
   }, []);
+
+  // persist filters when they change (debounced could be used but keep simple)
+  useEffect(() => {
+    try {
+      localStorage.setItem('kanbanFilters', JSON.stringify(selectedFilters));
+    } catch (e) {
+      // ignore
+    }
+  }, [selectedFilters]);
 
   const handleMessageChange = (state: string, value: string) => {
     setMessages(prev => ({ ...prev, [state]: value }));
@@ -280,7 +310,7 @@ const KanbanPage = () => {
   };
 
   const handleFilterSelection = () => {
-    const { sucursal, estado, fechaInicio, fechaFin } = selectedFilters;
+    const { sucursal, estado, fechaInicio, fechaFin, idioma } = selectedFilters;
     
     const filteredPatients = patients.filter(patient => {
       if (sucursal && patient.SUCURSAL !== sucursal) return false;
@@ -290,6 +320,18 @@ const KanbanPage = () => {
         const fv = new Date(patient.FV);
         if (fechaInicio && fv < new Date(fechaInicio)) return false;
         if (fechaFin && fv > new Date(fechaFin)) return false;
+      }
+      if (idioma) {
+        const raw = (patient.IDIOMA || patient.idioma || patient.LENGUAJE || patient.LANGUAGE || '').toString().toLowerCase();
+        const normalizeLang = (s: string) => {
+          if (!s) return '';
+          const t = s.toLowerCase();
+          if (t.includes('es') || t.includes('esp') || t.includes('españ') || t.includes('spanish')) return 'es';
+          if (t.includes('en') || t.includes('eng') || t.includes('ingl') || t.includes('english')) return 'en';
+          return '';
+        };
+        const detected = normalizeLang(raw);
+        if (raw && detected !== idioma) return false;
       }
       
       return true;
@@ -468,6 +510,16 @@ const KanbanPage = () => {
                   {states.map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
+                </select>
+                {/* Language filter */}
+                <select
+                  className="px-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  value={selectedFilters.idioma}
+                  onChange={(e) => setSelectedFilters(prev => ({ ...prev, idioma: e.target.value }))}
+                >
+                  <option value="">Idioma (Todos)</option>
+                  <option value="es">Español</option>
+                  <option value="en">English</option>
                 </select>
               <div className="flex gap-4 items-center">
                 <div className="relative">
