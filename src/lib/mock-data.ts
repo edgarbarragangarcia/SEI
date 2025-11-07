@@ -33,6 +33,8 @@ const createMockUser = (uid: string, displayName: string, email: string, role: R
   role,
   sucursal,
   photoURL,
+  phoneNumber: null,
+  refreshToken: '',
   emailVerified: true,
   isAnonymous: false,
   providerId: 'google.com',
@@ -48,7 +50,7 @@ const createMockUser = (uid: string, displayName: string, email: string, role: R
 
 export const mockUsers: MockUser[] = [
     createMockUser('user-1', 'Ana García', 'ana.garcia@example.com', 'Admin', 'AGUASCALIENTES', 'https://i.pravatar.cc/150?u=user-1'),
-    createMockUser('user-2', 'Carlos Martinez', 'carlos.martinez@example.com', 'User', 'TOLUCA', 'https://i.pravatar.cc/150?u=user-2'),
-    createMockUser('user-3', 'Sofia Rodriguez', 'sofia.rodriguez@example.com', 'User', 'CIUDAD DE MEXICO', 'https://i.pravatar.cc/150?u=user-3'),
-    createMockUser('user-4', 'Javier Lopez', 'javier.lopez@example.com', 'User', 'GUADALAJARA', 'https://i.pravatar.cc/150?u=user-4'),
+    createMockUser('user-2', 'Carlos Martinez', 'carlos.martinez@example.com', 'User', 'HERMOSILLO', 'https://i.pravatar.cc/150?u=user-2'),
+    createMockUser('user-3', 'Sofia Rodriguez', 'sofia.rodriguez@example.com', 'User', 'MONTERREY', 'https://i.pravatar.cc/150?u=user-3'),
+    createMockUser('user-4', 'Javier Lopez', 'javier.lopez@example.com', 'User', 'TIJUANA', 'https://i.pravatar.cc/150?u=user-4'),
 ];

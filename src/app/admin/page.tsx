@@ -20,10 +20,12 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [initialUsers, setInitialUsers] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     if (status === 'authenticated') {
+      setIsLoading(true);
       fetch('/api/users')
         .then(res => res.json())
         .then((data) => {
@@ -52,7 +54,8 @@ export default function AdminPage() {
         .catch((err) => {
           console.error('Error fetching /api/users:', err);
           toast?.({ title: 'Error', description: 'Failed to load users. Check server logs.', variant: 'destructive' });
-        });
+        })
+        .finally(() => setIsLoading(false));
     }
   }, [status]);
 
@@ -139,90 +142,103 @@ export default function AdminPage() {
       </CardHeader>
             <CardContent className="h-[70vh] flex flex-col">
                 <div className="relative w-full flex-1 overflow-auto rounded-md border">
-                    <Table>
-                        <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Correo</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Sucursales</TableHead>
-            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {users.slice(1).map((user, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{user[1]}</TableCell>
-                                <TableCell>{user[0]}</TableCell>
-                                <TableCell>
-                                    <Select value={user[2]} onValueChange={(value) => handleRoleChange(user[0], value)}>
-                                    <SelectTrigger>{user[2]}</SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Admin">Admin</SelectItem>
-                                        <SelectItem value="User">User</SelectItem>
-                                    </SelectContent>
-                                    </Select>
-                                </TableCell>
-                                <TableCell className="align-top">
-                                    {/* Compact branch selector: chips in the summary and absolute dropdown so table doesn't reflow */}
-                                    <div className="relative min-w-[220px] max-w-[460px]">
-                                      <details className="relative" onToggle={(e) => {
-                                        const el = e.currentTarget as HTMLDetailsElement;
-                                        if (el.open) {
-                                          try { document.body.style.overflow = 'hidden'; } catch (err) {}
-                                        } else {
-                                          try { document.body.style.overflow = ''; } catch (err) {}
-                                        }
-                                      }}>
-                                        <summary className="cursor-pointer px-2 py-2 border rounded-md bg-white shadow-sm flex items-center gap-2 min-h-[38px]">
-                                          {/* chips */}
-                                          {(() => {
-                                            const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
-                                            if (current.length === 0) return <span className="text-sm text-muted-foreground">Seleccionar...</span>;
-                                            const shown = current.slice(0, 3);
-                                            return (
-                                              <div className="flex items-center gap-2 overflow-hidden">
-                                                {shown.map((b: string) => (
-                                                  <span key={b} className="inline-flex items-center bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs whitespace-nowrap">{b}</span>
-                                                ))}
-                                                {current.length > 3 && (
-                                                  <span className="inline-flex items-center bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">+{current.length - 3}</span>
-                                                )}
-                                              </div>
-                                            );
-                                          })()}
-                                        </summary>
-                                        <div className="absolute right-0 top-full z-50 mt-2 bg-white border rounded-md p-4 shadow-lg min-w-[500px]">
-                                          <div className="grid grid-cols-3 gap-3">
-                                          {[...sucursales, 'Todas'].map((branch) => {
-                                            const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
-                                            const checked = current.includes(branch);
-                                            return (
-                                              <label key={branch} 
-                                                className={`flex items-center justify-center gap-2 p-2 rounded-lg border transition-colors
-                                                  ${checked ? 'bg-blue-50 border-blue-200 text-blue-700' : 'hover:bg-gray-50'}`}>
-                                                <input
-                                                  type="checkbox"
-                                                  className="hidden"
-                                                  checked={checked}
-                                                  onChange={() => {
-                                                    const next = checked ? current.filter((c: string) => c !== branch) : [...current, branch];
-                                                    handleSucursalChange(user[0], next.join(', '));
-                                                  }}
-                                                />
-                                                <span className="text-sm font-medium">{branch}</span>
-                                              </label>
-                                            );
-                                          })}
-                                          </div>
-                                        </div>
-                                      </details>
-                                      <div className="text-xs text-muted-foreground mt-1 truncate">{(user[3] || '') && (user[3] || '')}</div>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
+                  {isLoading ? (
+                    <div className="p-6" aria-busy="true">
+                      <div className="animate-pulse space-y-4">
+                        <div className="h-6 w-1/4 bg-gray-200 rounded" />
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="flex items-center gap-4">
+                            <div className="h-6 w-1/4 bg-gray-200 rounded" />
+                            <div className="h-6 w-1/3 bg-gray-200 rounded" />
+                            <div className="h-6 w-1/6 bg-gray-200 rounded" />
+                            <div className="h-6 w-1/6 bg-gray-200 rounded" />
+                          </div>
                         ))}
-                        </TableBody>
+                      </div>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Correo</TableHead>
+                          <TableHead>Rol</TableHead>
+                          <TableHead>Sucursales</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.slice(1).map((user, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{user[1]}</TableCell>
+                            <TableCell>{user[0]}</TableCell>
+                            <TableCell>
+                              <Select value={user[2]} onValueChange={(value) => handleRoleChange(user[0], value)}>
+                                <SelectTrigger>{user[2]}</SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Admin">Admin</SelectItem>
+                                  <SelectItem value="User">User</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell className="align-top">
+                              {/* Compact branch selector: chips in the summary and modal dialog for selection */}
+                              <div className="min-w-[220px] max-w-[460px]">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start h-auto py-2">
+                                      {(() => {
+                                        const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
+                                        if (current.length === 0) return <span className="text-sm text-muted-foreground">Seleccionar sucursales...</span>;
+                                        const shown = current.slice(0, 3);
+                                        return (
+                                          <div className="flex items-center gap-2 overflow-hidden">
+                                            {shown.map((b: string) => (
+                                              <span key={b} className="inline-flex items-center bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs whitespace-nowrap">{b}</span>
+                                            ))}
+                                            {current.length > 3 && (
+                                              <span className="inline-flex items-center bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">+{current.length - 3}</span>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="sm:max-w-[600px]">
+                                    <DialogHeader>
+                                      <DialogTitle>Seleccionar Sucursales</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="grid grid-cols-3 gap-3 p-4">
+                                      {[...sucursales, 'Todas'].map((branch) => {
+                                        const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
+                                        const checked = current.includes(branch);
+                                        return (
+                                          <label key={branch}
+                                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all
+                                              ${checked ? 'bg-blue-50 border-blue-200 text-blue-700 ring-2 ring-blue-200' : 'hover:bg-gray-50 hover:border-gray-300'}`}>
+                                            <input
+                                              type="checkbox"
+                                              className="hidden"
+                                              checked={checked}
+                                              onChange={() => {
+                                                const next = checked ? current.filter((c: string) => c !== branch) : [...current, branch];
+                                                handleSucursalChange(user[0], next.join(', '));
+                                              }}
+                                            />
+                                            <span className="text-sm font-medium">{branch}</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                                <div className="text-xs text-muted-foreground mt-1 truncate">{(user[3] || '') && (user[3] || '')}</div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
                     </Table>
+                  )}
                 </div>
                 <div className="flex justify-end mt-2 sticky bottom-0 bg-white py-2">
                     <Button onClick={handleSaveChanges} disabled={!hasChanges || isSaving}>
