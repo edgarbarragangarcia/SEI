@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -8,7 +9,7 @@ const ItemTypes = {
   CARD: 'card',
 };
 
-const states = ["PROSPECTO", "ATENDIDA", "Agendada", "PENDIENTE", "RECHAZA", "NO ASISTIO", "ASISTIO"];
+const states = ["PROSPECTO", "ATENDIDA", "AGENDADA", "PENDIENTE", "RECHAZA", "NO ASISTIO", "ASISTIO"];
 
 const toTitleCase = (str: string) => {
   if (!str) return '';
@@ -18,11 +19,13 @@ const toTitleCase = (str: string) => {
 const KanbanCard = ({ 
   patient, 
   isSelected, 
-  onSelect 
+  onSelect,
+  multiSelectMode
 }: { 
   patient: any, 
   isSelected: boolean,
-  onSelect: (patient: any) => void 
+  onSelect: (patient: any) => void,
+  multiSelectMode: boolean
 }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.CARD,
@@ -39,7 +42,7 @@ const KanbanCard = ({
       ref={drag as unknown as React.Ref<HTMLDivElement>}
       className={`group p-3 bg-white rounded-xl shadow-sm border h-auto min-h-[8rem] flex flex-col 
         ${isDragging ? 'opacity-50 rotate-2 scale-105' : 'opacity-100'} 
-        ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : 'hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5'}
+        ${isSelected ? 'bg-blue-50/60' : 'hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5'}
         transition-all duration-200 cursor-pointer`}
       onClick={() => onSelect(patient)}
     >
@@ -59,24 +62,19 @@ const KanbanCard = ({
           })()}
         </div>
         <div className="relative">
-          <input 
-            type="checkbox" 
-            checked={isSelected}
-            onChange={(e) => {
-              e.stopPropagation();
-              onSelect(patient);
-            }}
-            className="h-4 w-4 rounded-md border-gray-300 text-blue-600 
-              focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200
-              checked:bg-blue-500 checked:border-transparent"
-          />
-          {isSelected && (
-            <svg
-              className="w-2 h-2 absolute -top-1 -right-1 text-blue-500 fill-current"
-              viewBox="0 0 8 8"
+          {multiSelectMode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(patient);
+              }}
+              aria-pressed={isSelected}
+              className={`w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${isSelected ? 'bg-blue-500 border-transparent text-white' : 'bg-white border-gray-200'}`}
+              title={isSelected ? 'Deselect' : 'Select'}
             >
-              <circle cx="4" cy="4" r="4" />
-            </svg>
+              {/* inner dot */}
+              <span className={`inline-block w-3 h-3 rounded-full ${isSelected ? 'bg-white' : 'bg-gray-300'}`} />
+            </button>
           )}
         </div>
       </div>
@@ -151,14 +149,16 @@ const Column = ({
   onDrop,
   selectedPatients,
   onSelect,
-  onMoveSelected
+  onMoveSelected,
+  multiSelectMode
 }: { 
   state: string, 
   patients: any[], 
   onDrop: (p: any, state: string) => void,
   selectedPatients: any[],
   onSelect: (patient: any) => void,
-  onMoveSelected: (targetState: string) => void
+  onMoveSelected: (targetState: string) => void,
+  multiSelectMode: boolean
 }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.CARD,
@@ -217,6 +217,7 @@ const Column = ({
             patient={patient}
             isSelected={selectedPatients.some(p => p.NHCDEFINITIVO === patient.NHCDEFINITIVO)}
             onSelect={onSelect}
+            multiSelectMode={multiSelectMode}
           />
         ))}
       </div>
@@ -232,12 +233,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Calendar } from '@/components/ui/calendar';
 
 const KanbanPage = () => {
+  const { data: session } = useSession();
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [messages, setMessages] = useState<{ [key: string]: string }>({});
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedPatients, setSelectedPatients] = useState<any[]>([]);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     sucursal: '',
     estado: '',
@@ -284,8 +287,30 @@ const KanbanPage = () => {
       }
     };
 
+    // fetch users sheet to determine allowed branches for current user
+    const fetchAllowedBranches = async () => {
+      if (!session?.user?.email) return;
+      try {
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          // data rows: [email, name, role, branches]
+          const userRow = data.find((r: any) => r[0] === session.user.email);
+          if (userRow && userRow[3]) {
+            const allowed = userRow[3].toString().split(',').map((s: string) => s.trim()).filter(Boolean);
+            setSelectedFilters(prev => ({ ...prev, sucursal: prev.sucursal }));
+            // store allowed branches in localStorage for quick access
+            localStorage.setItem('allowedBranches', JSON.stringify(allowed));
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch allowed branches', e);
+      }
+    };
+
     fetchData();
     loadMessages();
+    fetchAllowedBranches();
   }, []);
 
   // persist filters when they change (debounced could be used but keep simple)
@@ -313,6 +338,16 @@ const KanbanPage = () => {
     const { sucursal, estado, fechaInicio, fechaFin, idioma } = selectedFilters;
     
     const filteredPatients = patients.filter(patient => {
+      // respect allowed branches if present in localStorage
+      const allowedBranchesStr = localStorage.getItem('allowedBranches');
+      if (allowedBranchesStr) {
+        try {
+          const allowedBranches = JSON.parse(allowedBranchesStr) as string[];
+          if (allowedBranches.length > 0 && patient.SUCURSAL && !allowedBranches.includes(patient.SUCURSAL)) return false;
+        } catch (e) {
+          // ignore
+        }
+      }
       if (sucursal && patient.SUCURSAL !== sucursal) return false;
       if (estado && (!patient.ESTADO || patient.ESTADO.toUpperCase() !== estado.toUpperCase())) return false;
       
@@ -488,9 +523,13 @@ const KanbanPage = () => {
                 />
               </div>
             </div>
-            <div className="flex gap-4 items-center bg-white/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-100">
+            {/* Filter controls moved into Kanban tab (see below) */}
+          </div>
+          <TabsContent value="kanban">
+            {/* Filters specific to Kanban */}
+            <div className="flex gap-4 items-center bg-white/50 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-gray-100 mb-4">
               <select
-                className="px-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="px-3 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 value={selectedFilters.sucursal}
                 onChange={(e) => setSelectedFilters(prev => ({ ...prev, sucursal: e.target.value }))}
               >
@@ -499,48 +538,45 @@ const KanbanPage = () => {
                   <option key={sucursal} value={sucursal}>{sucursal}</option>
                 ))}
               </select>
-                
-                {/* Estado filter */}
-                <select
-                  className="px-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  value={selectedFilters.estado}
-                  onChange={(e) => setSelectedFilters(prev => ({ ...prev, estado: e.target.value }))}
-                >
-                  <option value="">Todos los estados</option>
-                  {states.map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-                {/* Language filter */}
-                <select
-                  className="px-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  value={selectedFilters.idioma}
-                  onChange={(e) => setSelectedFilters(prev => ({ ...prev, idioma: e.target.value }))}
-                >
-                  <option value="">Idioma (Todos)</option>
-                  <option value="es">Español</option>
-                  <option value="en">English</option>
-                </select>
-              <div className="flex gap-4 items-center">
+              <select
+                className="px-3 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                value={selectedFilters.estado}
+                onChange={(e) => setSelectedFilters(prev => ({ ...prev, estado: e.target.value }))}
+              >
+                <option value="">Todos los estados</option>
+                {states.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <select
+                className="px-3 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                value={selectedFilters.idioma}
+                onChange={(e) => setSelectedFilters(prev => ({ ...prev, idioma: e.target.value }))}
+              >
+                <option value="">Idioma (Todos)</option>
+                <option value="es">Español</option>
+                <option value="en">English</option>
+              </select>
+              <div className="flex gap-3 items-center">
                 <div className="relative">
-                  <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <input
                     type="date"
-                    className="pl-10 pr-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="pl-8 pr-3 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     value={selectedFilters.fechaInicio}
                     onChange={(e) => setSelectedFilters(prev => ({ ...prev, fechaInicio: e.target.value }))}
                   />
                 </div>
                 <span className="text-gray-500">hasta</span>
                 <div className="relative">
-                  <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <input
                     type="date"
-                    className="pl-10 pr-4 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="pl-8 pr-3 py-2 border rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     value={selectedFilters.fechaFin}
                     onChange={(e) => setSelectedFilters(prev => ({ ...prev, fechaFin: e.target.value }))}
                   />
@@ -549,12 +585,19 @@ const KanbanPage = () => {
               <Button
                 variant="default"
                 onClick={() => handleFilterSelection()}
-                className="ml-2 rounded-xl px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                className="ml-2 rounded-xl px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
               >
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
                 Aplicar Filtros
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setMultiSelectMode(prev => !prev)}
+                className={"ml-2 rounded-xl px-3 py-2 transition-all " + (multiSelectMode ? 'bg-blue-50 text-blue-600' : '')}
+              >
+                {multiSelectMode ? 'Selección: ON' : 'Selección: OFF'}
               </Button>
               {selectedPatients.length > 0 && (
                 <Button
@@ -569,8 +612,6 @@ const KanbanPage = () => {
                 </Button>
               )}
             </div>
-          </div>
-          <TabsContent value="kanban">
             <div className="flex gap-6">
               {states.map((state) => (
                 <Column
@@ -581,6 +622,7 @@ const KanbanPage = () => {
                   selectedPatients={selectedPatients}
                   onSelect={handlePatientSelect}
                   onMoveSelected={handleMoveSelected}
+                  multiSelectMode={multiSelectMode}
                 />
               ))}
             </div>

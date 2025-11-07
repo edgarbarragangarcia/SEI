@@ -122,22 +122,22 @@ export default function AdminPage() {
                 Back to Dashboard
             </Button>
             <Card className="shadow-lg">
-            <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>
-                Edit user roles and branches. Changes are saved to the Google Sheet.
-                </CardDescription>
-            </CardHeader>
+      <CardHeader>
+        <CardTitle>Gestión de Usuarios</CardTitle>
+        <CardDescription>
+        Edita roles y sucursales de los usuarios. Los cambios se guardan en la hoja de Google.
+        </CardDescription>
+      </CardHeader>
             <CardContent>
                 <div className="relative w-full overflow-auto rounded-md border">
                     <Table>
                         <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Branch</TableHead>
-                        </TableRow>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Correo</TableHead>
+              <TableHead>Rol</TableHead>
+              <TableHead>Sucursales</TableHead>
+            </TableRow>
                         </TableHeader>
                         <TableBody>
                         {users.slice(1).map((user, index) => (
@@ -154,16 +154,30 @@ export default function AdminPage() {
                                     </Select>
                                 </TableCell>
                                 <TableCell>
-                                    <Select value={user[3]} onValueChange={(value) => handleSucursalChange(user[0], value)}>
-                                    <SelectTrigger>{user[3]}</SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="AGUASCALIENTES">AGUASCALIENTES</SelectItem>
-                                        <SelectItem value="TOLUCA">TOLUCA</SelectItem>
-                                        <SelectItem value="CIUDAD DE MEXICO">CIUDAD DE MEXICO</SelectItem>
-                                        <SelectItem value="GUADALAJARA">GUADALAJARA</SelectItem>
-                                        <SelectItem value="Todas">Todas</SelectItem>
-                                    </SelectContent>
-                                    </Select>
+                                    {/* Inline checkbox list inside a details panel to allow clicking to toggle branches */}
+                                    <details className="relative">
+                                      <summary className="cursor-pointer px-2 py-1 border rounded-md bg-white shadow-sm max-w-[300px] truncate">{(user[3] || 'Seleccionar...')}</summary>
+                                      <div className="absolute z-10 mt-2 bg-white border rounded-md p-3 shadow-lg min-w-[220px]">
+                                        {['AGUASCALIENTES','TOLUCA','CIUDAD DE MEXICO','GUADALAJARA','Todas'].map((branch) => {
+                                          const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
+                                          const checked = current.includes(branch);
+                                          return (
+                                            <label key={branch} className="flex items-center gap-2 mb-2">
+                                              <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => {
+                                                  const next = checked ? current.filter((c: string) => c !== branch) : [...current, branch];
+                                                  handleSucursalChange(user[0], next.join(', '));
+                                                }}
+                                              />
+                                              <span className="text-sm">{branch}</span>
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+                                    </details>
+                  <div className="text-xs text-muted-foreground mt-1 max-w-[360px] truncate">{(user[3] || '').toString()}</div>
                                 </TableCell>
                             </TableRow>
                         ))}

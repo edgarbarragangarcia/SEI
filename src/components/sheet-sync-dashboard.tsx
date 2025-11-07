@@ -53,38 +53,58 @@ export const SheetSyncDashboard = () => {
   const options = {
     chart: { id: 'status', toolbar: { show: false } },
     xaxis: { categories },
-    plotOptions: { bar: { borderRadius: 6, columnWidth: '50%' } },
+    plotOptions: { bar: { borderRadius: 6, columnWidth: '50%', distributed: true } },
     dataLabels: { enabled: false },
     grid: { borderColor: 'rgba(0,0,0,0.06)' },
-    colors: ['#8b5cf6'],
+    colors: COLORS.slice(0, categories.length),
     tooltip: { theme: 'light' },
   }
   const series = [{ name: 'count', data: counts }]
 
   return (
-    <div className="container mx-auto p-4 h-[calc(100vh-8rem)] flex flex-col">
-      <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
+    // reduce overall height so dashboard doesn't force vertical scroll on typical screens
+    <div className="container mx-auto p-3 h-[calc(100vh-6rem)] flex flex-col">
+      <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="col-span-1 flex flex-col gap-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-md">Total de Pacientes</CardTitle>
+              <CardTitle className="text-sm">Total de Pacientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{data.length}</p>
+              <p className="text-2xl font-bold">{data.length}</p>
             </CardContent>
           </Card>
           <Card className="flex-grow flex flex-col bg-white">
             <CardHeader>
-              <CardTitle className="text-md">Pacientes por Estado</CardTitle>
+              <CardTitle className="text-sm">Pacientes por Estado</CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-              <ul className="space-y-3">
-                {statusData.map((s) => (
-                  <li key={s.name} className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">{s.name}</span>
-                    <span className="text-2xl font-bold">{s.count}</span>
-                  </li>
-                ))}
+              <ul className="divide-y divide-gray-100">
+                {statusData.map((s, idx) => {
+                  const total = data.length || 1;
+                  const pct = Math.round((s.count / total) * 100);
+                  const color = COLORS[idx % COLORS.length];
+                  return (
+                    <li key={s.name} className="py-2 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span aria-hidden className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-xs text-muted-foreground tracking-wide">{s.name}</span>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="w-36 hidden sm:block">
+                          <div className="h-2 rounded bg-gray-100 overflow-hidden">
+                            <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: color }} />
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold">{s.count}</div>
+                            <div className="text-xs text-muted-foreground">{pct}%</div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </CardContent>
           </Card>
@@ -92,11 +112,12 @@ export const SheetSyncDashboard = () => {
         </div>
         <Card className="col-span-2 flex flex-col bg-white">
           <CardHeader>
-            <CardTitle className="text-md">Distribución por Estado</CardTitle>
+            <CardTitle className="text-sm">Distribución por Estado</CardTitle>
           </CardHeader>
           <CardContent className="flex-grow">
-            <div className="w-full h-[32rem]">
-              <ApexCharts options={options} series={series} type="bar" height={520} />
+            <div className="w-full h-[24rem]">
+              {/* reduce chart height to avoid vertical scroll; ApexChart height given in px as well */}
+              <ApexCharts options={options} series={series} type="bar" height={380} />
             </div>
           </CardContent>
         </Card>
