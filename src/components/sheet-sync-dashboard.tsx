@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const SheetSyncDashboard = () => {
@@ -42,13 +42,27 @@ export const SheetSyncDashboard = () => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF4560', '#7C3AED'];
 
+  const ApexCharts: any = dynamic(() => import('react-apexcharts'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 animate-pulse" /> })
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><p>Loading dashboard...</p></div>;
   }
 
+  const categories = statusData.map(s => s.name)
+  const counts = statusData.map(s => s.count)
+  const options = {
+    chart: { id: 'status', toolbar: { show: false } },
+    xaxis: { categories },
+    plotOptions: { bar: { borderRadius: 6, columnWidth: '50%' } },
+    dataLabels: { enabled: false },
+    grid: { borderColor: 'rgba(0,0,0,0.06)' },
+    colors: ['#8b5cf6'],
+    tooltip: { theme: 'light' },
+  }
+  const series = [{ name: 'count', data: counts }]
+
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-8rem)] flex flex-col">
-      
       <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="col-span-1 flex flex-col gap-4">
           <Card>
@@ -61,48 +75,29 @@ export const SheetSyncDashboard = () => {
           </Card>
           <Card className="flex-grow flex flex-col bg-white">
             <CardHeader>
-              <CardTitle className="text-md">Distribución por Sucursal</CardTitle>
+              <CardTitle className="text-md">Pacientes por Estado</CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sucursalData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={(entry) => `${entry.name}: ${entry.value}`}
-                  >
-                    {sucursalData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              <ul className="space-y-3">
+                {statusData.map((s) => (
+                  <li key={s.name} className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">{s.name}</span>
+                    <span className="text-2xl font-bold">{s.count}</span>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
+          {/* 'Distribución por Sucursal' card removed as requested */}
         </div>
-  <Card className="col-span-2 flex flex-col bg-white">
+        <Card className="col-span-2 flex flex-col bg-white">
           <CardHeader>
             <CardTitle className="text-md">Distribución por Estado</CardTitle>
           </CardHeader>
           <CardContent className="flex-grow">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={statusData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="w-full h-[32rem]">
+              <ApexCharts options={options} series={series} type="bar" height={520} />
+            </div>
           </CardContent>
         </Card>
       </div>

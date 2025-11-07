@@ -15,20 +15,102 @@ const usersSheetName = 'Users';
 
 export async function GET() {
   try {
+    // First verify if we can access the spreadsheet
+    try {
+      await sheets.spreadsheets.get({ spreadsheetId });
+    } catch (error: any) {
+      if (error.code === 403) {
+        return NextResponse.json({
+          error: 'Permission denied',
+          details: 'The service account does not have access to the spreadsheet. Please check the sharing settings.',
+          action: 'Share the spreadsheet with: ' + process.env.GOOGLE_CLIENT_EMAIL
+        }, { status: 403 });
+      } else if (error.code === 404) {
+        return NextResponse.json({
+          error: 'Spreadsheet not found',
+          details: 'The specified spreadsheet ID does not exist or is incorrect.',
+          spreadsheetId
+        }, { status: 404 });
+      }
+      throw error;
+    }
+
+    // Then try to get the values
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: `${usersSheetName}!A:D`,
     });
+
+    if (!response.data.values) {
+      return NextResponse.json({
+        message: 'No data found in sheet',
+        sheetName: usersSheetName,
+        range: 'A:D'
+      }, { status: 200 });
+    }
+
     return NextResponse.json(response.data.values);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching users:', error);
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    const errorDetails = {
+      error: 'Failed to fetch users',
+      details: error.message,
+      code: error.code,
+      status: error.status,
+      spreadsheetId,
+      sheetName: usersSheetName,
+      serviceAccount: process.env.GOOGLE_CLIENT_EMAIL
+    };
+    return NextResponse.json(errorDetails, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const users = await req.json();
+
+    // Verify sheet access first
+    try {
+      await sheets.spreadsheets.get({ spreadsheetId });
+    } catch (error: any) {
+      if (error.code === 403) {
+        return NextResponse.json({
+          error: 'Permission denied',
+          details: 'The service account does not have write access to the spreadsheet.',
+          action: 'Grant edit permissions to: ' + process.env.GOOGLE_CLIENT_EMAIL
+        }, { status: 403 });
+      }
+      throw error;
+    }
+
+    // Verify sheet exists and create if it doesn't
+    try {
+      const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+      const sheetExists = spreadsheet.data.sheets?.some(
+        s => s.properties?.title === usersSheetName
+      );
+
+      if (!sheetExists) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [{
+              addSheet: {
+                properties: { title: usersSheetName }
+              }
+            }]
+          }
+        });
+      }
+    } catch (error: any) {
+      return NextResponse.json({
+        error: 'Failed to verify/create sheet',
+        details: error.message,
+        sheetName: usersSheetName
+      }, { status: 500 });
+    }
+
+    // Attempt the update
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `${usersSheetName}!A1`,
@@ -37,9 +119,22 @@ export async function POST(req: NextRequest) {
         values: users,
       },
     });
-    return NextResponse.json({ success: true });
-  } catch (error) {
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Users updated successfully',
+      updatedCount: users.length
+    });
+  } catch (error: any) {
     console.error('Error updating users:', error);
-    return NextResponse.json({ error: 'Failed to update users' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Failed to update users',
+      details: error.message,
+      code: error.code,
+      status: error.status,
+      spreadsheetId,
+      sheetName: usersSheetName,
+      serviceAccount: process.env.GOOGLE_CLIENT_EMAIL
+    }, { status: 500 });
   }
 }

@@ -53,18 +53,29 @@ export const authOptions: NextAuthOptions = {
           const userRow = userRowIndex !== -1 ? users[userRowIndex] : null;
 
           if (userEmail === 'eabarragang@ingenes.com') {
+            // Ensure this account is treated as Admin, but do NOT overwrite an existing sucursal
+            // if the admin manually changed it via the Admin UI. Only set defaults when missing.
             userRole = 'Admin';
-            userSucursal = 'MONTERREY';
             if (userRow) {
-              if (userRow[2] !== 'Admin' || userRow[3] !== 'MONTERREY') {
-                await sheets.spreadsheets.values.update({
-                  spreadsheetId,
-                  range: `${usersSheetName}!C${userRowIndex + 1}:D${userRowIndex + 1}`,
-                  valueInputOption: 'RAW',
-                  requestBody: { values: [[userRole, userSucursal]] }
-                });
+              // Preserve sucursal from sheet if present; fallback to MONTERREY
+              userSucursal = userRow[3] || 'MONTERREY';
+
+              // If the role in sheet is not Admin, update only the role column (C) to Admin
+              if (userRow[2] !== 'Admin') {
+                try {
+                  await sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `${usersSheetName}!C${userRowIndex + 1}:C${userRowIndex + 1}`,
+                    valueInputOption: 'RAW',
+                    requestBody: { values: [[userRole]] }
+                  });
+                } catch (err) {
+                  console.warn('Failed to update role for admin user:', err);
+                }
               }
             } else {
+              // No row exists: create one with default sucursal MONTERREY
+              userSucursal = 'MONTERREY';
               await sheets.spreadsheets.values.append({
                 spreadsheetId,
                 range: usersSheetName,

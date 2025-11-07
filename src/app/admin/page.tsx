@@ -17,6 +17,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [initialUsers, setInitialUsers] = useState<any[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,8 +31,18 @@ export default function AdminPage() {
             const uniqueUsers = Array.from(new Map(data.map((user: any) => [user[0], user])).values());
             setUsers(uniqueUsers);
             setInitialUsers(JSON.parse(JSON.stringify(uniqueUsers)));
+          } else if (data && typeof data === 'object' && Object.keys(data).length === 0) {
+            // Empty object returned: treat as no users (avoid noisy console.error in dev)
+            console.warn('Empty /api/users response received; no users to display.');
+            setUsers([]);
+            setInitialUsers([]);
+          } else if (data && (data.error || data.message)) {
+            // Backend returned an error object with details
+            console.warn('Error from /api/users:', data);
+            toast?.({ title: 'Error', description: data.error || data.message || 'Failed to load users.', variant: 'destructive' });
           } else {
-            console.error('Unexpected /api/users response:', data);
+            // Unexpected shape
+            console.warn('Unexpected /api/users response:', data);
             // Show a toast to the user if fetching failed
             toast?.({ title: 'Error', description: 'Failed to load users. Check server logs.', variant: 'destructive' });
           }
@@ -69,16 +80,33 @@ export default function AdminPage() {
   };
 
   const handleSaveChanges = async () => {
+    setIsSaving(true);
     try {
-      await fetch('/api/users', {
+      const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(users),
       });
-      toast({ title: 'Success', description: 'User data updated successfully.' });
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // The API provides structured error details now
+        const message = body?.error || body?.message || 'Failed to update users';
+        const details = body?.details ? `: ${body.details}` : '';
+        toast({ title: 'Error', description: `${message}${details}`, variant: 'destructive' });
+        setIsSaving(false);
+        return;
+      }
+
+      // Successful update
+      toast({ title: 'Success', description: body?.message || 'User data updated successfully.' });
       setInitialUsers(JSON.parse(JSON.stringify(users)));
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to update user data.', variant: 'destructive' });
+      console.error('Error saving users from AdminPage:', error);
+      toast({ title: 'Error', description: 'Failed to update user data. Revisa la consola del servidor.', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -143,8 +171,8 @@ export default function AdminPage() {
                     </Table>
                 </div>
                 <div className="flex justify-end mt-4">
-                    <Button onClick={handleSaveChanges} disabled={!hasChanges}>
-                    Save Changes
+                    <Button onClick={handleSaveChanges} disabled={!hasChanges || isSaving}>
+                      {isSaving ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </div>
             </CardContent>
