@@ -2,9 +2,6 @@ import type { User } from '@/components/auth-provider';
 
 export const sucursales = [
   "AGUASCALIENTES",
-  "TOLUCA",
-  "CIUDAD DE MEXICO",
-  "GUADALAJARA",
   "HERMOSILLO",
   "MONTERREY",
   "TIJUANA"

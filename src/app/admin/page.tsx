@@ -11,6 +11,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/header';
+import { sucursales } from '@/lib/mock-data';
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -190,7 +191,7 @@ export default function AdminPage() {
                                           })()}
                                         </summary>
                                         <div className="absolute right-0 top-full z-50 mt-2 bg-white border rounded-md p-3 shadow-lg min-w-[220px] max-w-[420px] max-h-[240px] overflow-auto">
-                                          {['AGUASCALIENTES','TOLUCA','CIUDAD DE MEXICO','GUADALAJARA','Todas'].map((branch) => {
+                                          {[...sucursales, 'Todas'].map((branch) => {
                                             const current = (user[3] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean);
                                             const checked = current.includes(branch);
                                             return (
