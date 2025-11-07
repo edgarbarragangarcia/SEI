@@ -23,23 +23,15 @@ const LoadingState = () => (
 export default function Home() {
   const { user, loading } = useAuth();
 
-  const renderContent = () => {
-    if (loading) {
-      return <LoadingState />;
-    }
-
-    if (!user) {
-      return <LoginCard />;
-    }
-
-    return <SheetSyncDashboard />;
-  };
+  // La redirección ahora se maneja en el middleware
+  if (loading) {
+    return <LoadingState />;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-
       <main className="flex flex-col items-center flex-1">
-        {renderContent()}
+        {!user ? <LoginCard /> : <SheetSyncDashboard />}
       </main>
     </div>
   );

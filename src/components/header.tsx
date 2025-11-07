@@ -14,7 +14,7 @@ export function Header() {
       <div className="container mx-auto px-4 md:px-6">
   <header className="flex items-center justify-between h-16 rounded-full bg-gradient-to-r from-rose-100 to-teal-100 text-gray-800 shadow-lg -mx-4 md:-mx-6 px-6 md:px-8">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="flex items-center justify-center w-10 h-10 bg-white/50 rounded-full backdrop-blur-sm" aria-label="Home">
+          <Link href="/dashboard" className="flex items-center justify-center w-10 h-10 bg-white/50 rounded-full backdrop-blur-sm" aria-label="Dashboard">
             {/* Modern inline SVG logo with subtle gradient */}
             <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
               <defs>

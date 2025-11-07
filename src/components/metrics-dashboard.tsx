@@ -5,14 +5,14 @@ import MetricsCard from './metrics-card';
 
 export const MetricsDashboard: React.FC = () => {
   const metrics = [
-    { title: 'Revenue', value: '$278,600', change: '+6.1%', color: 'green', sparkline: [10, 14, 12, 18, 22, 28, 35] },
-    { title: 'New Customers', value: '162', change: '+81%', color: 'teal', sparkline: [2, 3, 4, 7, 9, 11, 14] },
-    { title: 'Website Sessions', value: '301,544', change: '-2%', color: 'blue', sparkline: [50, 52, 49, 48, 50, 51, 49] },
-    { title: 'Page Views', value: '20,400', change: '+3.4%', color: 'orange', sparkline: [8, 9, 10, 12, 11, 12, 14] },
-    { title: 'Churn Rate', value: '4.8%', change: '+2%', color: 'red', sparkline: [5, 5.2, 4.9, 5.1, 4.8, 4.7, 4.8] },
-    { title: 'Active Users', value: '27,883', change: '+12%', color: 'green', sparkline: [18, 19, 20, 22, 24, 26, 27] },
-    { title: 'ARPC', value: '57%', change: '-3.4%', color: 'orange', sparkline: [55, 56, 57, 58, 57, 56, 57] },
-    { title: 'Bounce Rate', value: '32%', change: '+2%', color: 'blue', sparkline: [30, 31, 32, 33, 32, 31, 32] },
+    { title: 'Total Pacientes', value: '324', change: '+12', color: 'blue', sparkline: [280, 290, 300, 305, 315, 320, 324] },
+    { title: 'Citas Agendadas', value: '48', change: '+8%', color: 'green', sparkline: [35, 38, 40, 42, 45, 46, 48] },
+    { title: 'Citas Pendientes', value: '15', change: '-2', color: 'orange', sparkline: [20, 18, 19, 17, 16, 16, 15] },
+    { title: 'Asistencia', value: '92%', change: '+4%', color: 'green', sparkline: [85, 86, 88, 89, 90, 91, 92] },
+    { title: 'No Asistieron', value: '5', change: '-1', color: 'red', sparkline: [8, 7, 7, 6, 6, 5, 5] },
+    { title: 'Prospectos', value: '28', change: '+5', color: 'teal', sparkline: [20, 22, 23, 24, 25, 26, 28] },
+    { title: 'Atendidos Hoy', value: '12', change: '+3', color: 'blue', sparkline: [6, 7, 8, 9, 10, 11, 12] },
+    { title: 'Seguimientos', value: '45', change: '+8', color: 'purple', sparkline: [32, 35, 37, 39, 41, 43, 45] },
   ];
 
   return (

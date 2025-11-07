@@ -9,7 +9,7 @@ type MetricsCardProps = {
   title: string;
   value: string;
   change?: string;
-  color?: 'green' | 'red' | 'blue' | 'orange' | 'teal';
+  color?: 'green' | 'red' | 'blue' | 'orange' | 'teal' | 'purple';
   sparkline?: number[];
 };
 
@@ -41,6 +41,7 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({ title, value, change, 
     blue: '#3b82f6',
     orange: '#f59e0b',
     teal: '#14b8a6',
+    purple: '#9333ea',
   };
 
   return (
