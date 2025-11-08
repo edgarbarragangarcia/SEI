@@ -67,20 +67,102 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log('POST /api/sheets received body:', body);
 
     // Support two shapes:
     // 1) { rowIndex: number, header: string, value: string } -> update a single cell
     // 2) { sheetName: string, values: [[...]] } -> append rows
 
-  if (body && body.rowIndex && body.header) {
-      const rowIndex = Number(body.rowIndex);
-      const header = (body.header || '').toString().trim().toLowerCase();
-      const value = body.value ?? '';
+  if (body && body.NHCDEFINITIVO && body.header && body.value) {
+      const nhcVal = body.NHCDEFINITIVO.toString();
+      const header = body.header;
+      const value = body.value;
+      const sheetName = body.sheetName || 'prueba';
 
-      // Read header row to find column index
-      const headerRes = await sheets.spreadsheets.values.get({ spreadsheetId, range: `A1:Z1` });
-      const headers = headerRes.data.values && headerRes.data.values[0] ? headerRes.data.values[0].map((h: any) => (h || '').toString().trim().toLowerCase()) : [];
-      const colIndex = headers.indexOf(header);
+      // Read header row
+      const headerRes = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A1:Z1` });
+      console.log('Headers found:', headerRes.data.values && headerRes.data.values[0]);
+      
+      const headers = headerRes.data.values && headerRes.data.values[0] 
+        ? headerRes.data.values[0].map((h: any) => h?.toString().trim() || '')
+        : [];
+      console.log('Looking for header:', header, 'in headers:', headers);
+      
+      // Find the URL column (looking for exact match first, then case-insensitive)
+      let colIndex = headers.indexOf(header);
+      if (colIndex === -1) {
+        colIndex = headers.findIndex(h => h.toLowerCase() === header.toLowerCase());
+      }
+
+      if (colIndex === -1) {
+        return NextResponse.json({ 
+          error: 'Header not found', 
+          header,
+          availableHeaders: headers 
+        }, { status: 400 });
+      }
+
+      // Find row with matching NHC
+      const nhcColIndex = headers.findIndex(h => 
+        h.toLowerCase().includes('nhc') || 
+        h.toLowerCase().includes('definitivo')
+      );
+
+      if (nhcColIndex === -1) {
+        return NextResponse.json({ 
+          error: 'NHC column not found',
+          availableHeaders: headers 
+        }, { status: 400 });
+      }
+
+      // Get NHC column values
+      const nhcCol = String.fromCharCode('A'.charCodeAt(0) + nhcColIndex);
+      const nhcRange = `${sheetName}!${nhcCol}2:${nhcCol}`;
+      const nhcRes = await sheets.spreadsheets.values.get({ 
+        spreadsheetId, 
+        range: nhcRange 
+      });
+
+      // Find the row with matching NHC
+      const nhcValues = nhcRes.data.values || [];
+      const rowIndex = nhcValues.findIndex(row => 
+        row[0]?.toString().trim() === nhcVal.trim()
+      ) + 2; // +2 because we start from row 2 and need to account for 0-based index
+
+      if (rowIndex < 2) {
+        return NextResponse.json({ 
+          error: 'NHC not found', 
+          nhc: nhcVal 
+        }, { status: 404 });
+      }
+
+      // Update the URL cell
+      const urlCol = String.fromCharCode('A'.charCodeAt(0) + colIndex);
+      const updateRange = `${sheetName}!${urlCol}${rowIndex}`;
+      
+      console.log('Updating cell:', {
+        range: updateRange,
+        value,
+        nhc: nhcVal,
+        rowIndex
+      });
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: updateRange,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[value]] },
+      });
+
+      return NextResponse.json({ 
+        success: true,
+        updated: {
+          nhc: nhcVal,
+          column: header,
+          value: value,
+          range: updateRange
+        }
+      });
 
       if (colIndex === -1) {
         return NextResponse.json({ error: 'Header not found', header }, { status: 400 });

@@ -696,6 +696,52 @@ const KanbanPage = () => {
         throw new Error(details || 'Error creating calendar event');
       }
 
+      // Actualizar la URL del Meet en la hoja de cálculo
+      console.log('Calendar result:', calendarResult);
+      const meetUrl = calendarResult?.hangoutLink || calendarResult?.htmlLink;
+      console.log('Meet URL to save:', meetUrl);
+      
+      if (meetUrl) {
+        const updateMeetUrlPromises = patientsToSchedule.map(async patient => {
+          console.log('Updating Meet URL for patient:', patient);
+          try {
+            const response = await fetch('/api/sheets', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                NHCDEFINITIVO: patient.NHCDEFINITIVO,
+                header: 'URL',
+                value: meetUrl,
+                sheetName: 'prueba'
+              }),
+            });
+            
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
+            
+            if (!response.ok) {
+              console.error('Failed to update sheet:', responseText);
+              throw new Error(responseText || 'Failed to update sheet');
+            }
+            
+            const data = responseText ? JSON.parse(responseText) : {};
+            console.log('Sheet update response:', data);
+            return data;
+          } catch (error) {
+            console.error('Sheet update error:', error);
+            throw error;
+          }
+        });
+
+        try {
+          await Promise.all(updateMeetUrlPromises);
+          console.log('Meet URLs updated in sheet for all patients');
+        } catch (error) {
+          console.warn('Failed to update Meet URLs in sheet:', error);
+          // No lanzamos el error aquí para no interrumpir el flujo principal
+        }
+      }
+
       // Show success with Meet link if available
       toast({ 
         title: 'Cita Programada', 

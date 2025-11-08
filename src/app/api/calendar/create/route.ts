@@ -86,7 +86,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ 
         success: true, 
         eventId: response.data.id,
-        htmlLink: response.data.htmlLink 
+        htmlLink: response.data.htmlLink,
+        hangoutLink: response.data.hangoutLink 
       });
     } catch (err: any) {
       console.error('Initial calendar insert failed:', err?.message || err);
@@ -117,7 +118,8 @@ export async function POST(req: Request) {
           return NextResponse.json({ 
             success: true, 
             eventId: retryResponse.data.id,
-            htmlLink: retryResponse.data.htmlLink 
+            htmlLink: retryResponse.data.htmlLink,
+            hangoutLink: retryResponse.data.hangoutLink
           });
         } catch (retryErr: any) {
           console.error('Retry after token refresh failed:', retryErr?.message || retryErr);
