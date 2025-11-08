@@ -550,11 +550,18 @@ const KanbanPage = () => {
         )
       );
 
+      // Actualizar el estado local y limpiar la selección
+      setPatients(prevPatients => {
+        // Filtrar los pacientes movidos del estado
+        return prevPatients.filter(p => !patientsToMove.some(pm => pm.NHCDEFINITIVO === p.NHCDEFINITIVO));
+      });
+
       toast({
         title: "Pacientes movidos",
         description: `Se han movido ${patientsToMove.length} pacientes a ${targetState}`,
       });
 
+      // Limpiar la selección
       setSelectedPatients([]);
     } catch (error) {
       console.error('Failed to move patients:', error);
@@ -704,6 +711,8 @@ const KanbanPage = () => {
 
       setIsScheduleModalOpen(false);
       setPatientsToSchedule([]);
+      // Limpiar también la selección principal
+      setSelectedPatients([]);
 
     } catch (error: any) {
       console.error('Error al programar la cita:', error);
