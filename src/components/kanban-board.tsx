@@ -137,7 +137,8 @@ export default function KanbanBoard() {
       }
 
       toast({ title: 'Éxito', description: 'El estado del paciente ha sido actualizado.' });
-      setPatients(prev => prev.map(p => p.originalIndex === patient.originalIndex ? { ...p, estado: newState } : p));
+      // Removemos el paciente del estado actual
+      setPatients(prev => prev.filter(p => p.originalIndex !== patient.originalIndex));
     } catch (error) {
       toast({ title: 'Error', description: 'No se pudo actualizar el estado del paciente.', variant: 'destructive' });
     }
@@ -181,11 +182,9 @@ export default function KanbanBoard() {
 
       await Promise.all([...updateStatePromises, calendarPromise]);
 
-      // Actualizar el estado local de los pacientes
-      setPatients(prev => prev.map(p => 
-        selectedPatients.some(sp => sp.originalIndex === p.originalIndex)
-          ? { ...p, estado: 'ATENDIDA' }
-          : p
+      // Removemos los pacientes seleccionados del estado actual
+      setPatients(prev => prev.filter(p => 
+        !selectedPatients.some(sp => sp.originalIndex === p.originalIndex)
       ));
 
       toast({ 

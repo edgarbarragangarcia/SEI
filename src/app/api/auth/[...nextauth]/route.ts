@@ -2,6 +2,42 @@ import NextAuth, { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { google } from 'googleapis';
 
+// Helper to refresh access tokens using Google's OAuth2 client
+async function refreshAccessToken(token: any) {
+  try {
+    console.log('Refreshing access token for user...');
+    const oAuth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    );
+
+    oAuth2Client.setCredentials({ refresh_token: token.refreshToken || token.refresh_token });
+
+    // getAccessToken will attempt to refresh when refresh_token is present
+    const newTokenResponse = await oAuth2Client.getAccessToken();
+    const newAccessToken = newTokenResponse && (newTokenResponse as any).token ? (newTokenResponse as any).token : (newTokenResponse as any);
+
+    if (!newAccessToken) {
+      throw new Error('Could not refresh access token');
+    }
+
+    // Note: Google doesn't always return a new refresh token. Preserve the old one.
+    return {
+      ...token,
+      accessToken: newAccessToken,
+      accessTokenExpires: Date.now() + 60 * 60 * 1000, // 1 hour from now
+      refreshToken: token.refreshToken || token.refresh_token,
+      error: undefined,
+    };
+  } catch (error) {
+    console.error('Error refreshing access token:', error);
+    return {
+      ...token,
+      error: 'RefreshAccessTokenError',
+    };
+  }
+}
+
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -19,11 +55,57 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: [
+            'openid',
+            'email',
+            'profile',
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/userinfo.email',
+          ].join(' '),
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
     }),
   ],
   callbacks: {
-    async session({ session, token }) {
+    // Persist tokens to the JWT so server-side APIs can use them
+    async jwt({ token, account, user }: { token: any; account: any; user: any }) {
+      // Initial sign-in
+      if (account && user) {
+        console.log('JWT callback - new sign in:', {
+          hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token,
+          scope: account.scope
+        });
+        
+        return {
+          ...token,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+          accessTokenExpires: account.expires_at ? account.expires_at * 1000 : Date.now() + 3600 * 1000,
+        };
+      }
+
+      // Return previous token if the access token has not expired yet
+      if (Date.now() < (token.accessTokenExpires || 0)) {
+        return token;
+      }
+
+      // Access token has expired — attempt to refresh it using the refresh token
+      console.log('JWT: Token expired, attempting refresh');
+      const refreshed = await refreshAccessToken(token as any);
+      return refreshed;
+    },
+    async session({ session, token }: { session: any, token: any }) {
       if (session.user) {
+        // Add the tokens to the session so they're available to the client
+        session.accessToken = token.accessToken;
+        session.refreshToken = token.refreshToken;
+        
         const userEmail = session.user.email;
         const userName = session.user.name;
         const usersSheetName = 'Users';
@@ -106,6 +188,9 @@ export const authOptions: NextAuthOptions = {
         
         (session.user as any).role = userRole;
         (session.user as any).sucursal = userSucursal;
+        // expose tokens in session on server-side only
+        (session as any).accessToken = (token as any).accessToken;
+        (session as any).refreshToken = (token as any).refreshToken;
       }
       return session;
     },

@@ -63,3 +63,111 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch sheet data', details: errorMessage }, { status: 500 });
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+
+    // Support two shapes:
+    // 1) { rowIndex: number, header: string, value: string } -> update a single cell
+    // 2) { sheetName: string, values: [[...]] } -> append rows
+
+  if (body && body.rowIndex && body.header) {
+      const rowIndex = Number(body.rowIndex);
+      const header = (body.header || '').toString().trim().toLowerCase();
+      const value = body.value ?? '';
+
+      // Read header row to find column index
+      const headerRes = await sheets.spreadsheets.values.get({ spreadsheetId, range: `A1:Z1` });
+      const headers = headerRes.data.values && headerRes.data.values[0] ? headerRes.data.values[0].map((h: any) => (h || '').toString().trim().toLowerCase()) : [];
+      const colIndex = headers.indexOf(header);
+
+      if (colIndex === -1) {
+        return NextResponse.json({ error: 'Header not found', header }, { status: 400 });
+      }
+
+      const columnLetter = String.fromCharCode('A'.charCodeAt(0) + colIndex);
+      const range = `${columnLetter}${rowIndex}:${columnLetter}${rowIndex}`;
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[value]] },
+      });
+
+      return NextResponse.json({ success: true });
+    }
+
+      // Support updating by NHCDEFINITIVO (identifier) e.g. { NHCDEFINITIVO: '123', ESTADO: 'ATENDIDA' }
+      if (body && (body.NHCDEFINITIVO || body.nhcdefinitivo || body.nhc)) {
+        const nhcVal = (body.NHCDEFINITIVO || body.nhcdefinitivo || body.nhc).toString().trim();
+        const newEstado = body.ESTADO ?? body.estado ?? body.value ?? '';
+        const sheetName = body.sheetName || 'prueba';
+
+        // Read header row
+        const headerRes = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A1:Z1` });
+        const headers = headerRes.data.values && headerRes.data.values[0] ? headerRes.data.values[0].map((h: any) => (h || '').toString().trim().toLowerCase()) : [];
+
+        // Determine id column (search common variants)
+        const idCandidates = ['nhcdefinitivo', 'nhc_definitivo', 'nhc', 'nhc_def', 'nhcdef'];
+        let idColIndex = -1;
+        for (const cand of idCandidates) {
+          const idx = headers.indexOf(cand);
+          if (idx !== -1) { idColIndex = idx; break; }
+        }
+
+        if (idColIndex === -1) {
+          return NextResponse.json({ error: 'Could not find NHC column in header', headers }, { status: 400 });
+        }
+
+        const idColLetter = String.fromCharCode('A'.charCodeAt(0) + idColIndex);
+
+        // Read id column values starting from row 2
+        const idColRes = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!${idColLetter}2:${idColLetter}` });
+        const idValues = idColRes.data.values || [];
+        let foundRow = -1;
+        for (let i = 0; i < idValues.length; i++) {
+          const cell = (idValues[i] && idValues[i][0]) ? idValues[i][0].toString().trim() : '';
+          if (cell === nhcVal) { foundRow = i + 2; break; }
+        }
+
+        if (foundRow === -1) {
+          return NextResponse.json({ error: 'Could not find row for provided NHCDEFINITIVO', nhc: nhcVal }, { status: 404 });
+        }
+
+        // Find ESTADO column
+        const estadoIdx = headers.indexOf('estado');
+        if (estadoIdx === -1) {
+          // If ESTADO header not found, try column N (index 13) as fallback
+          const fallbackIdx = 13; // column N (0-based)
+          const colLetter = String.fromCharCode('A'.charCodeAt(0) + fallbackIdx);
+          const range = `${sheetName}!${colLetter}${foundRow}:${colLetter}${foundRow}`;
+          await sheets.spreadsheets.values.update({ spreadsheetId, range, valueInputOption: 'RAW', requestBody: { values: [[newEstado]] } });
+          return NextResponse.json({ success: true, row: foundRow, col: colLetter });
+        }
+
+        const estadoColLetter = String.fromCharCode('A'.charCodeAt(0) + estadoIdx);
+        const updateRange = `${sheetName}!${estadoColLetter}${foundRow}:${estadoColLetter}${foundRow}`;
+        await sheets.spreadsheets.values.update({ spreadsheetId, range: updateRange, valueInputOption: 'RAW', requestBody: { values: [[newEstado]] } });
+        return NextResponse.json({ success: true, row: foundRow, col: estadoColLetter });
+      }
+
+      if (body && body.sheetName && Array.isArray(body.values)) {
+      const sheetName = body.sheetName;
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: `${sheetName}!A:Z`,
+        valueInputOption: 'RAW',
+        requestBody: { values: body.values },
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  } catch (error) {
+    console.error('Error handling POST /api/sheets:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: 'Failed to update sheet', details: errorMessage }, { status: 500 });
+  }
+}

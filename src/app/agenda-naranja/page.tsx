@@ -233,6 +233,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
+import { ToastAction } from '@/components/ui/toast';
 
 const KanbanPage = () => {
   const { data: session } = useSession();
@@ -515,6 +516,13 @@ const KanbanPage = () => {
 
   const handleMoveSelected = async (targetState: string) => {
     const patientsToMove = selectedPatients.filter(p => p.ESTADO !== targetState);
+    // If moving selected patients from PROSPECTO -> ATENDIDA, open scheduling modal
+    const prosToAttend = patientsToMove.filter(p => (p.ESTADO || '').toString().toUpperCase() === 'PROSPECTO' && targetState.toUpperCase() === 'ATENDIDA');
+    if (prosToAttend.length > 0) {
+      setPatientsToSchedule(prosToAttend);
+      setIsScheduleModalOpen(true);
+      return;
+    }
     
     try {
       await Promise.all(patientsToMove.map(patient =>
@@ -601,7 +609,9 @@ const KanbanPage = () => {
 
   const handleScheduleAppointment = async (appointmentData: { date: Date; time: string; message: string }) => {
     try {
-      // 1. Actualizar el estado en Google Sheets
+      console.log('Scheduling appointment for patients:', patientsToSchedule.map(p => p.NHCDEFINITIVO));
+
+      // 1. Actualizar el estado en Google Sheets (attempt) - do this first so UI reflects the change
       const updateStatePromises = patientsToSchedule.map(patient =>
         fetch('/api/sheets', {
           method: 'POST',
@@ -614,52 +624,93 @@ const KanbanPage = () => {
             APELLIDOM: patient.APELLIDOM,
             TELEFONO: patient.TELEFONO,
           }),
+        }).then(res => {
+          if (!res.ok) return res.text().then(t => Promise.reject(new Error(t || res.statusText)));
+          return res.json().catch(() => ({}));
         })
       );
 
-      // 2. Crear evento en Google Calendar
-      const calendarPromise = fetch('/api/calendar/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          summary: `Cita: ${patientsToSchedule.map(p => `${p.NOMBRE} ${p.APELLIDOP}`).join(', ')}`,
-          description: appointmentData.message,
-          start: {
-            dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${appointmentData.time}:00`,
-            timeZone: 'America/Mexico_City',
-          },
-          end: {
-            dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${
-              appointmentData.time.split(':')[0]}:${
-              (parseInt(appointmentData.time.split(':')[1]) + 30).toString().padStart(2, '0')}:00`,
-            timeZone: 'America/Mexico_City',
-          },
-          attendees: patientsToSchedule.map(p => ({ email: p.EMAIL })),
-        }),
-      });
-
-      await Promise.all([...updateStatePromises, calendarPromise]);
-
-      // Actualizar el estado local de los pacientes
+      // Optimistically update local state so cards move to 'ATENDIDA' after submit
       setPatients(prev => prev.map(p => 
         patientsToSchedule.some(sp => sp.NHCDEFINITIVO === p.NHCDEFINITIVO)
           ? { ...p, ESTADO: 'ATENDIDA' }
           : p
       ));
 
+      // Await sheet updates but don't block calendar creation on individual failures
+      try {
+        await Promise.all(updateStatePromises);
+        console.log('Sheets updated for scheduled patients');
+      } catch (sheetErr) {
+        console.warn('One or more sheet updates failed:', sheetErr);
+        toast({ title: 'Advertencia', description: 'No se pudo actualizar la hoja para algunos pacientes. Se movieron localmente.', variant: 'destructive' });
+      }
+
+      // 2. Crear evento en Google Calendar
+      console.log('Creating calendar event...');
+      // Build proper ISO datetimes for start and end (add 30 minutes safely)
+      const [hourStr, minuteStr] = appointmentData.time.split(':');
+      const hourNum = parseInt(hourStr, 10) || 0;
+      const minuteNum = parseInt(minuteStr, 10) || 0;
+      const startDt = new Date(appointmentData.date);
+      startDt.setHours(hourNum, minuteNum, 0, 0);
+      const endDt = new Date(startDt.getTime() + 30 * 60 * 1000);
+
+      const calendarResponse = await fetch('/api/calendar/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          summary: `Cita: ${patientsToSchedule.map(p => `${p.NOMBRE} ${p.APELLIDOP}`).join(', ')}`,
+          description: appointmentData.message,
+          start: {
+            dateTime: startDt.toISOString(),
+            timeZone: 'America/Mexico_City',
+          },
+          end: {
+            dateTime: endDt.toISOString(),
+            timeZone: 'America/Mexico_City',
+          },
+          attendees: patientsToSchedule.map(p => ({ email: p.EMAIL })),
+        }),
+      });
+
+      let calendarResult: any = {};
+      try {
+        calendarResult = await calendarResponse.json();
+      } catch (e) {
+        console.warn('Failed to parse calendar response as JSON', e);
+      }
+
+      console.log('Calendar response:', calendarResponse.status, calendarResult);
+
+      if (!calendarResponse.ok) {
+        // Show the detailed error message returned by the API when possible
+        const details = calendarResult?.details || calendarResult?.error || calendarResponse.statusText;
+        throw new Error(details || 'Error creating calendar event');
+      }
+
+      // Show success with Meet link if available
       toast({ 
-        title: 'Éxito', 
-        description: 'La cita ha sido programada y los pacientes han sido notificados.' 
+        title: 'Cita Programada', 
+        description: calendarResult?.htmlLink 
+          ? 'La cita ha sido programada. Haz clic para ver el enlace de Google Meet.'
+          : 'La cita ha sido programada y los pacientes han sido notificados.',
+        action: calendarResult?.htmlLink ? (
+          <ToastAction altText="Ver Meet" onClick={() => window.open(calendarResult.htmlLink, '_blank')}>
+            Ver Meet
+          </ToastAction>
+        ) : undefined
       });
 
       setIsScheduleModalOpen(false);
       setPatientsToSchedule([]);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al programar la cita:', error);
+      // If calendar creation failed we already moved cards locally; show a descriptive toast
       toast({ 
         title: 'Error', 
-        description: 'No se pudo programar la cita. Por favor intente de nuevo.', 
+        description: error?.message || 'No se pudo programar la cita. Por favor intente de nuevo.', 
         variant: 'destructive' 
       });
     }
@@ -671,8 +722,9 @@ const KanbanPage = () => {
     const toState = (newState || '').toString().toUpperCase();
 
     if (fromState === 'PROSPECTO' && toState === 'ATENDIDA') {
-      // show confirmation UI instead of immediately updating
-      setConfirmMove({ patient, newState: toState });
+      // open the scheduling modal so the user can pick date/time and send message
+      setPatientsToSchedule([patient]);
+      setIsScheduleModalOpen(true);
       return;
     }
 
@@ -741,6 +793,12 @@ const KanbanPage = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
+      <ScheduleAppointmentModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        patients={patientsToSchedule}
+        onSchedule={handleScheduleAppointment}
+      />
       <div className="p-8">
         <Tabs defaultValue="kanban">
           <div className="flex flex-col gap-4 mb-6">
