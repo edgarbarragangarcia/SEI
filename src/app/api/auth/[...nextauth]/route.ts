@@ -51,10 +51,19 @@ const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  pages: {
+    signIn: '/auth',
+    error: '/auth',
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           scope: [
@@ -73,16 +82,23 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // Get the actual base URL from environment or request
-      const actualBaseUrl = process.env.NEXTAUTH_URL || baseUrl;
+      console.log('NextAuth Redirect - URL:', url);
+      console.log('NextAuth Redirect - BaseUrl:', baseUrl);
+      console.log('NextAuth Redirect - NEXTAUTH_URL env:', process.env.NEXTAUTH_URL);
       
-      console.log('Redirect callback:', { url, baseUrl, actualBaseUrl });
+      // If it's a relative URL, make it absolute with baseUrl
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
       
-      // If the URL starts with /, it's a relative URL so it's safe to return
-      if (url.startsWith("/")) return `${actualBaseUrl}${url}`;
-      // Allows callback URLs that use the same origin
-      else if (new URL(url).origin === actualBaseUrl) return url;
-      // Otherwise, redirect to dashboard after successful login
+      // If the URL origin matches the base URL, allow it
+      try {
+        const urlObj = new URL(url);
+        const baseUrlObj = new URL(baseUrl);
+        if (urlObj.origin === baseUrlObj.origin) return url;
+      } catch (e) {
+        console.error('Error parsing URLs:', e);
+      }
+      
+      // Default redirect after login
       return `${baseUrl}/dashboard`;
     },
     // Persist tokens to the JWT so server-side APIs can use them
