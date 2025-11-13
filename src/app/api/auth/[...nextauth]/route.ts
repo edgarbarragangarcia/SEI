@@ -73,10 +73,15 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {
+      // Get the actual base URL from environment or request
+      const actualBaseUrl = process.env.NEXTAUTH_URL || baseUrl;
+      
+      console.log('Redirect callback:', { url, baseUrl, actualBaseUrl });
+      
       // If the URL starts with /, it's a relative URL so it's safe to return
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.startsWith("/")) return `${actualBaseUrl}${url}`;
       // Allows callback URLs that use the same origin
-      else if (new URL(url).origin === baseUrl) return url;
+      else if (new URL(url).origin === actualBaseUrl) return url;
       // Otherwise, redirect to dashboard after successful login
       return `${baseUrl}/dashboard`;
     },

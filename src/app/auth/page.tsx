@@ -86,22 +86,22 @@ export default function AuthForm() {
                 SS
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white">Bienvenido a SheetSyncSEI</h3>
-                <p className="mt-2 text-sm text-cyan-100/80">Sincroniza, administra y colabora con tus hojas de Google en tiempo real.</p>
+                <h3 className="text-2xl font-bold text-gray-900">Bienvenido a SheetSyncSEI</h3>
+                <p className="mt-2 text-sm text-gray-700">Sincroniza, administra y colabora con tus hojas de Google en tiempo real.</p>
               </div>
 
-              <ul className="mt-4 space-y-3 text-sm text-cyan-100">
+              <ul className="mt-4 space-y-3 text-sm text-gray-800">
                 <li className="flex items-start gap-3">
                   <span className="text-xl">⚡</span>
-                  <span>Sincronización automática</span>
+                  <span className="font-medium">Sincronización automática</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-xl">🔒</span>
-                  <span>Acceso seguro con Google</span>
+                  <span className="font-medium">Acceso seguro con Google</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-xl">🎯</span>
-                  <span>Interfaz limpia y moderna</span>
+                  <span className="font-medium">Interfaz limpia y moderna</span>
                 </li>
               </ul>
             </div>
@@ -110,13 +110,13 @@ export default function AuthForm() {
             <div className="flex items-center justify-center p-8">
               <div className="w-full max-w-md">
                 <div className="mb-6">
-                  <h2 className="text-3xl font-bold text-white">Inicia sesión</h2>
-                  <p className="mt-1 text-sm text-gray-300">Accede con tu cuenta de Google o usa tu correo.</p>
+                  <h2 className="text-3xl font-bold text-gray-900">Inicia sesión</h2>
+                  <p className="mt-1 text-sm text-gray-600">Accede con tu cuenta de Google o usa tu correo.</p>
                 </div>
 
                 <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                   <div>
-                    <label className="text-sm font-semibold text-gray-800 mb-2 block">Correo electrónico</label>
+                    <label className="text-sm font-bold text-gray-900 mb-2 block">Correo electrónico</label>
                     <input
                       type="email"
                       placeholder="tucorreo@ejemplo.com"
@@ -126,7 +126,7 @@ export default function AuthForm() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-semibold text-gray-800 mb-2 block">Contraseña</label>
+                    <label className="text-sm font-bold text-gray-900 mb-2 block">Contraseña</label>
                     <input
                       type="password"
                       placeholder="••••••••"
