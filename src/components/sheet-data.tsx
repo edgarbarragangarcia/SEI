@@ -34,52 +34,74 @@ const toTitleCase = (str: string) => {
 
 const DraggableCard: React.FC<DraggableCardProps> = ({ row, index, moveCard }) => {
   const ref = React.useRef<HTMLDivElement>(null);
+  const [isOver, setIsOver] = useState(false);
+  
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
-    hover(item: { index: number }, monitor) {
+    hover(item: any, monitor) {
       if (!ref.current) {
         return;
       }
+
       const dragIndex = item.index;
       const hoverIndex = index;
+
       if (dragIndex === hoverIndex) {
         return;
       }
+
       const hoverBoundingRect = ref.current?.getBoundingClientRect();
       const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+
       const clientOffset = monitor.getClientOffset();
       if (!clientOffset) {
         return;
       }
-      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+
+      const hoverClientY = (clientOffset as any).y - hoverBoundingRect.top;
+
       if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
         return;
       }
+
       if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
         return;
       }
+
       moveCard(dragIndex, hoverIndex);
       item.index = hoverIndex;
     },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
   });
 
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.CARD,
-    item: () => {
-      return { id: row.NHCDEFINITIVO, index, originalStatus: row.ESTADO };
-    },
+    item: () => ({
+      id: row.NHCDEFINITIVO,
+      index,
+      originalStatus: row.ESTADO,
+    }),
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
 
-  drag(drop(ref));
+  const combined = drag(drop(ref));
 
   const fullName = toTitleCase(`${row['NOMBRE'] || ''} ${row['APELLIDOP'] || ''} ${row['APELLIDOM'] || ''}`.trim());
 
   return (
-<div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }} className="mb-2 cursor-move">
-      <Card className="transition-all duration-300 hover:shadow-lg flex flex-col h-28">
+    <div 
+      ref={ref} 
+      style={{ 
+        opacity: isDragging ? 0.3 : 1,
+        transform: isDragging ? 'scale(0.95)' : 'scale(1)',
+      }} 
+      className={`mb-2 cursor-grab active:cursor-grabbing transition-all duration-150 ${isOver ? 'scale-105' : ''}`}
+    >
+      <Card className={`transition-all duration-150 hover:shadow-lg flex flex-col h-28 hover:border-blue-300 ${isDragging ? 'opacity-30 border-red-300' : ''} ${isOver ? 'bg-blue-100 border-blue-400 ring-2 ring-blue-300' : 'hover:border-gray-300'}`}>
         <CardHeader className="pb-1">
           <CardTitle className="text-xs font-bold truncate">{fullName || 'No Name'}</CardTitle>
         </CardHeader>
@@ -140,29 +162,70 @@ interface StatusColumnProps {
 
 const StatusColumn: React.FC<StatusColumnProps> = ({ title, cards, moveCard, status, updateCardStatus, data, colorClass }) => {
   const ref = React.useRef<HTMLDivElement>(null);
+  const [isOver, setIsOver] = useState(false);
+  const dropTimeoutRef = React.useRef<NodeJS.Timeout>();
+  
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
-    drop: (item: { id: string, originalStatus: string }) => {
-      console.log('Drop event:', {
-        droppedOnStatus: status,
-        cardOriginalStatus: item.originalStatus,
-        condition: status.toUpperCase() !== item.originalStatus?.toUpperCase(),
-      });
+    hover: (item: any) => {
+      setIsOver(true);
+      // Clear any pending timeout
+      if (dropTimeoutRef.current) {
+        clearTimeout(dropTimeoutRef.current);
+      }
+    },
+    drop: (item: any) => {
+      // Update status immediately when dropped
       if (status.toUpperCase() !== item.originalStatus?.toUpperCase()) {
         updateCardStatus(item.id, status);
       }
+      setIsOver(false);
     },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
   });
 
   drop(ref);
 
+  const handleMouseLeave = () => {
+    // Set a small timeout to allow the drop to complete
+    dropTimeoutRef.current = setTimeout(() => {
+      setIsOver(false);
+    }, 100);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (dropTimeoutRef.current) {
+        clearTimeout(dropTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div ref={ref} className={`rounded-xl p-4 shadow-md border ${colorClass}`}>
-      <h3 className="font-bold text-md mb-4 text-center uppercase tracking-wider text-gray-600">{title} ({cards.length})</h3>
-      <div>
-        {cards.map((card) => (
-          <DraggableCard key={card.NHCDEFINITIVO} index={data.findIndex(d => d.NHCDEFINITIVO === card.NHCDEFINITIVO)} row={card} moveCard={moveCard} />
+    <div 
+      ref={ref} 
+      onMouseLeave={handleMouseLeave}
+      className={`rounded-xl p-4 shadow-md border min-h-96 transition-all duration-200 ${colorClass} ${isOver ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+    >
+      <h3 className="font-bold text-md mb-4 text-center uppercase tracking-wider text-gray-600">
+        {title} ({cards.length})
+      </h3>
+      <div className={`space-y-2 transition-all ${isOver ? 'bg-blue-50/30 rounded-lg p-2' : ''}`}>
+        {cards.map((card, cardIndex) => (
+          <DraggableCard 
+            key={card.NHCDEFINITIVO} 
+            index={data.findIndex(d => d.NHCDEFINITIVO === card.NHCDEFINITIVO)} 
+            row={card} 
+            moveCard={moveCard} 
+          />
         ))}
+        {cards.length === 0 && (
+          <div className={`flex items-center justify-center h-32 text-gray-400 text-sm font-medium rounded-lg transition-all ${isOver ? 'bg-blue-100/50 text-blue-500' : 'bg-gray-100/30'}`}>
+            {isOver ? '📍 Suelta aquí' : '✨ Arrastra aquí'}
+          </div>
+        )}
       </div>
     </div>
   );
