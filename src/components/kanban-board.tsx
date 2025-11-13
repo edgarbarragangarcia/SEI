@@ -150,6 +150,14 @@ export default function KanbanBoard() {
 
   const handleScheduleAppointment = async (appointmentData: { date: Date; time: string; message: string }) => {
     try {
+      // Optimistic update: actualizar UI inmediatamente
+      const updatedPatients = selectedPatients.map(p => ({ ...p, estado: 'ATENDIDA' }));
+      setPatients(prev => prev.map(p => 
+        updatedPatients.some(up => up.originalIndex === p.originalIndex) 
+          ? updatedPatients.find(up => up.originalIndex === p.originalIndex)!
+          : p
+      ));
+
       // 1. Actualizar el estado en Google Sheets
       const updateStatePromises = selectedPatients.map(patient =>
         fetch('/api/sheets', {
@@ -185,17 +193,20 @@ export default function KanbanBoard() {
       });
 
       await Promise.all([...updateStatePromises, calendarPromise]);
-
-      // Removemos los pacientes seleccionados del estado actual
-      setPatients(prev => prev.filter(p => 
-        !selectedPatients.some(sp => sp.originalIndex === p.originalIndex)
-      ));
+      setSelectedPatients([]);
+      setIsScheduleModalOpen(false);
 
       toast({ 
         title: 'Éxito', 
         description: 'La cita ha sido programada y los pacientes han sido notificados.' 
       });
     } catch (error) {
+      // Revertir cambios si falla
+      setPatients(prev => prev.map(p => 
+        selectedPatients.some(sp => sp.originalIndex === p.originalIndex)
+          ? selectedPatients.find(sp => sp.originalIndex === p.originalIndex)!
+          : p
+      ));
       toast({ 
         title: 'Error', 
         description: 'No se pudo programar la cita. Por favor intente de nuevo.', 
