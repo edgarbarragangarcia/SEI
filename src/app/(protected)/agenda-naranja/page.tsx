@@ -525,7 +525,18 @@ const KanbanPage = () => {
     }
     
     try {
-      await Promise.all(patientsToMove.map(patient =>
+      // 1. Actualización optimista inmediata: mostrar cambios al instante
+      const originalPatients = patients;
+      setPatients(prev => 
+        prev.map(p => 
+          patientsToMove.some(pm => pm.NHCDEFINITIVO === p.NHCDEFINITIVO)
+            ? { ...p, ESTADO: targetState }
+            : p
+        )
+      );
+
+      // 2. Confirmar con servidor
+      const results = await Promise.all(patientsToMove.map(patient =>
         fetch('/api/update-status', {
           method: 'POST',
           headers: {
@@ -539,22 +550,11 @@ const KanbanPage = () => {
             APELLIDOM: patient.APELLIDOM,
             TELEFONO: patient.TELEFONO,
           }),
+        }).then(res => {
+          if (!res.ok) throw new Error('Server error');
+          return res;
         })
       ));
-
-      setPatients(prev => 
-        prev.map(p => 
-          selectedPatients.some(sp => sp.NHCDEFINITIVO === p.NHCDEFINITIVO)
-            ? { ...p, ESTADO: targetState }
-            : p
-        )
-      );
-
-      // Actualizar el estado local y limpiar la selección
-      setPatients(prevPatients => {
-        // Filtrar los pacientes movidos del estado
-        return prevPatients.filter(p => !patientsToMove.some(pm => pm.NHCDEFINITIVO === p.NHCDEFINITIVO));
-      });
 
       toast({
         title: "Pacientes movidos",
@@ -565,6 +565,8 @@ const KanbanPage = () => {
       setSelectedPatients([]);
     } catch (error) {
       console.error('Failed to move patients:', error);
+      // 3. Revertir en caso de error
+      setPatients(originalPatients);
       toast({
         title: "Error",
         description: "No se pudieron mover los pacientes",
@@ -783,15 +785,17 @@ const KanbanPage = () => {
       return;
     }
 
-    // default immediate update
+    // 1. Actualización optimista inmediata
+    const originalPatient = patient;
+    const updatedPatient = { ...patient, ESTADO: newState };
     setPatients((prevPatients) =>
       prevPatients.map((p) =>
-        p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? { ...p, ESTADO: newState } : p
+        p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? updatedPatient : p
       )
     );
 
     try {
-      await fetch('/api/update-status', {
+      const response = await fetch('/api/update-status', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -805,9 +809,29 @@ const KanbanPage = () => {
           TELEFONO: patient.TELEFONO,
         }),
       });
+
+      if (!response.ok) {
+        throw new Error('Server error');
+      }
+
+      // 2. Toast de éxito
+      toast({
+        title: 'Éxito',
+        description: `${patient.NOMBRE} movido a ${newState}`,
+      });
     } catch (error) {
       console.error('Failed to update card status:', error);
-      // Optionally revert the optimistic update here
+      // 3. Revertir si hay error
+      setPatients((prevPatients) =>
+        prevPatients.map((p) =>
+          p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? originalPatient : p
+        )
+      );
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar el paciente',
+        variant: 'destructive',
+      });
     }
 
     console.log(`Patient ${patient.NHCDEFINITIVO} moved to ${newState}`);
