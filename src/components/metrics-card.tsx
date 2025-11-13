@@ -37,43 +37,49 @@ function Sparkline({ data = [], color = '#10b981' }: { data?: number[]; color?: 
 
 export const MetricsCard: React.FC<MetricsCardProps> = ({ title, value, change, color = 'green', sparkline, description }) => {
   const colorMap: Record<string, string> = {
-    green: '#10b981',
-    red: '#ef4444',
-    blue: '#3b82f6',
-    orange: '#f59e0b',
-    teal: '#14b8a6',
-    purple: '#9333ea',
+    green: '#00FFA3',
+    red: '#FF6B6B',
+    blue: '#5EEAD4',
+    orange: '#FFD580',
+    teal: '#7AF1D3',
+    purple: '#B388FF',
   };
+
+  const glow = (hex: string) => ({ boxShadow: `0 6px 24px ${hex}22, 0 2px 8px ${hex}19` });
 
   return (
     <motion.div whileHover={{ y: -6 }} className="w-full">
-      <Card className={cn('h-full transition-all hover:shadow-lg') as string}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-semibold">{value}</div>
-                {change && (
-                  <div className={cn(
-                    "text-sm mt-1",
-                    change.startsWith('+') ? "text-green-600" : "text-red-600"
-                  )}>{change}</div>
-                )}
+      <Card className={cn('h-full transition-all bg-gradient-to-br from-white/2 to-white/3 border border-white/6 backdrop-blur-md rounded-xl overflow-hidden') as string} style={glow(colorMap[color])}>
+        <div className="relative">
+          {/* left accent */}
+          <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: `linear-gradient(180deg, ${colorMap[color]}, rgba(0,0,0,0))` }} />
+          <CardHeader className="pb-2 pl-6">
+            <CardTitle className="text-sm font-semibold text-gray-100/95">{title}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-extrabold text-white">{value}</div>
+                  {change && (
+                    <div className={cn(
+                      "text-sm mt-1 font-medium",
+                      change.startsWith('+') ? "text-green-400" : "text-red-400"
+                    )}>{change}</div>
+                  )}
+                </div>
+                <div className="ml-4">
+                  <Sparkline data={sparkline} color={colorMap[color]} />
+                </div>
               </div>
-              <div className="ml-4">
-                <Sparkline data={sparkline} color={colorMap[color]} />
-              </div>
+              {description && (
+                <div className="text-sm text-gray-300/80 border-t border-white/6 pt-3">
+                  {description}
+                </div>
+              )}
             </div>
-            {description && (
-              <div className="text-sm text-muted-foreground border-t pt-2">
-                {description}
-              </div>
-            )}
-          </div>
-        </CardContent>
+          </CardContent>
+        </div>
       </Card>
     </motion.div>
   );
