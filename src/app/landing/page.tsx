@@ -49,8 +49,12 @@ export default function LandingPage() {
       {/* Navigation */}
       <header className="relative z-10 container mx-auto px-6 py-8 flex items-center justify-between">
         <Logo variant="default" size="md" showText={true} />
-        <nav className="ml-auto flex gap-8 items-center">
-          {/* Navegación simplificada: enlaces de inicio de sesión removidos */}
+        <nav className="ml-auto flex gap-4 items-center">
+          <Link href="/auth" className="">
+            <Button className="px-4 py-2 text-sm rounded-md">
+              Iniciar sesión
+            </Button>
+          </Link>
         </nav>
       </header>
 
