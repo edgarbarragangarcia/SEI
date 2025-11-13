@@ -26,9 +26,9 @@ export default function AuthForm() {
   }, []);
 
   return (
-    <div className="relative flex flex-col min-h-screen overflow-hidden bg-black text-white">
+    <div className="relative flex flex-col min-h-screen overflow-hidden bg-white text-gray-900">
       <div className="fixed inset-0 -z-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-black to-purple-900/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white to-indigo-50" />
         <div
           className="absolute w-96 h-96 rounded-full blur-3xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 animate-pulse"
           style={{
@@ -61,20 +61,7 @@ export default function AuthForm() {
             SheetSyncSEI
           </span>
         </div>
-        <nav className="ml-auto flex gap-8 items-center">
-          <Link
-            href="/"
-            className="text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors duration-300"
-          >
-            Features
-          </Link>
-          <Link
-            href="/auth"
-            className="text-sm font-medium px-6 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 transition-all duration-300 shadow-lg hover:shadow-cyan-500/50"
-          >
-            Login
-          </Link>
-        </nav>
+        {/* Navegación simplificada: enlaces de inicio de sesión removidos */}
       </header>
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-6">
@@ -140,7 +127,7 @@ export default function AuthForm() {
                       <input type="checkbox" className="h-4 w-4 rounded border-2 border-gray-300 bg-white text-cyan-500 focus:ring-2 focus:ring-cyan-400" />
                       <span>Recordarme</span>
                     </label>
-                    <a href="#" className="text-sm text-cyan-600 hover:text-cyan-700 font-medium underline">¿Olvidaste tu contraseña?</a>
+                    {/* Enlace de 'Olvidaste tu contraseña' removido según solicitud */}
                   </div>
 
                   <div className="flex flex-col gap-3">
@@ -162,9 +149,7 @@ export default function AuthForm() {
                   </div>
                 </form>
 
-                <p className="mt-6 text-center text-sm text-gray-400">
-                  ¿No tienes cuenta? <Link href="/" className="text-cyan-300 hover:underline">Regístrate</Link>
-                </p>
+                {/* Texto de registro removido según solicitud */}
               </div>
             </div>
           </Card>

@@ -26,9 +26,8 @@ export function UserNav() {
 
   if (!session) {
     return (
-      <Button variant="ghost" onClick={() => signIn('google')}>
-        <LogIn className="mr-2 h-4 w-4" />
-        Login
+      <Button variant="ghost" onClick={() => signIn('google')} aria-label="Iniciar sesión">
+        <LogIn className="h-4 w-4" />
       </Button>
     );
   }
@@ -37,9 +36,8 @@ export function UserNav() {
 
   if (!user) {
     return (
-      <Button variant="ghost" onClick={() => signIn('google')}>
-        <LogIn className="mr-2 h-4 w-4" />
-        Login
+      <Button variant="ghost" onClick={() => signIn('google')} aria-label="Iniciar sesión">
+        <LogIn className="h-4 w-4" />
       </Button>
     );
   }
@@ -79,12 +77,12 @@ export function UserNav() {
           {user.role === 'Admin' && (
             <DropdownMenuItem onClick={() => router.push('/admin')} className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
-              <span>Manage Users</span>
+              <span>Administrar usuarios</span>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/landing' })} className="cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
+            <span>Cerrar sesión</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

@@ -122,6 +122,10 @@ export default function KanbanBoard() {
         return; // Esperamos a que el usuario complete el formulario
       }
 
+      // Optimistic update: actualizar UI inmediatamente
+      const updatedPatient = { ...patient, estado: newState };
+      setPatients(prev => prev.map(p => p.originalIndex === patient.originalIndex ? updatedPatient : p));
+
       const response = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,9 +141,9 @@ export default function KanbanBoard() {
       }
 
       toast({ title: 'Éxito', description: 'El estado del paciente ha sido actualizado.' });
-      // Removemos el paciente del estado actual
-      setPatients(prev => prev.filter(p => p.originalIndex !== patient.originalIndex));
     } catch (error) {
+      // Revertir cambio si falla
+      setPatients(prev => prev.map(p => p.originalIndex === patient.originalIndex ? patient : p));
       toast({ title: 'Error', description: 'No se pudo actualizar el estado del paciente.', variant: 'destructive' });
     }
   };

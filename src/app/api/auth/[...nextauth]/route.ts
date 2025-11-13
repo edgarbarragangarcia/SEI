@@ -2,10 +2,10 @@ import NextAuth, { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { google } from 'googleapis';
 
-// Helper to refresh access tokens using Google's OAuth2 client
+// Helper para refrescar tokens de acceso usando el cliente OAuth2 de Google
 async function refreshAccessToken(token: any) {
   try {
-    console.log('Refreshing access token for user...');
+    console.log('Refrescando token de acceso para el usuario...');
     const oAuth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET
@@ -13,12 +13,12 @@ async function refreshAccessToken(token: any) {
 
     oAuth2Client.setCredentials({ refresh_token: token.refreshToken || token.refresh_token });
 
-    // getAccessToken will attempt to refresh when refresh_token is present
+    // getAccessToken intentará refrescar cuando refresh_token esté presente
     const newTokenResponse = await oAuth2Client.getAccessToken();
     const newAccessToken = newTokenResponse && (newTokenResponse as any).token ? (newTokenResponse as any).token : (newTokenResponse as any);
 
     if (!newAccessToken) {
-      throw new Error('Could not refresh access token');
+      throw new Error('No se pudo refrescar el token de acceso');
     }
 
     // Note: Google doesn't always return a new refresh token. Preserve the old one.
@@ -30,7 +30,7 @@ async function refreshAccessToken(token: any) {
       error: undefined,
     };
   } catch (error) {
-    console.error('Error refreshing access token:', error);
+    console.error('Error al refrescar token de acceso:', error);
     return {
       ...token,
       error: 'RefreshAccessTokenError',
@@ -82,30 +82,30 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {
-      console.log('NextAuth Redirect - URL:', url);
-      console.log('NextAuth Redirect - BaseUrl:', baseUrl);
-      console.log('NextAuth Redirect - NEXTAUTH_URL env:', process.env.NEXTAUTH_URL);
+        console.log('NextAuth Redirección - URL:', url);
+        console.log('NextAuth Redirección - BaseUrl:', baseUrl);
+        console.log('NextAuth Redirección - variable NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
       
-      // If it's a relative URL, make it absolute with baseUrl
+      // Si es una URL relativa, convertirla a absoluta con baseUrl
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       
-      // If the URL origin matches the base URL, allow it
+      // Si el origen de la URL coincide con el baseUrl, permitirla
       try {
         const urlObj = new URL(url);
         const baseUrlObj = new URL(baseUrl);
         if (urlObj.origin === baseUrlObj.origin) return url;
       } catch (e) {
-        console.error('Error parsing URLs:', e);
+        console.error('Error al parsear URLs:', e);
       }
       
-      // Default redirect after login
+      // Redirección por defecto después del inicio de sesión
       return `${baseUrl}/dashboard`;
     },
     // Persist tokens to the JWT so server-side APIs can use them
     async jwt({ token, account, user }: { token: any; account: any; user: any }) {
       // Initial sign-in
       if (account && user) {
-        console.log('JWT callback - new sign in:', {
+        console.log('JWT callback - nuevo inicio de sesión:', {
           hasAccessToken: !!account.access_token,
           hasRefreshToken: !!account.refresh_token,
           scope: account.scope
@@ -124,8 +124,8 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
-      // Access token has expired — attempt to refresh it using the refresh token
-      console.log('JWT: Token expired, attempting refresh');
+      // El token de acceso ha expirado — intentar refrescarlo usando refresh token
+      console.log('JWT: Token expirado, intentando refrescar');
       const refreshed = await refreshAccessToken(token as any);
       return refreshed;
     },
@@ -210,7 +210,7 @@ export const authOptions: NextAuthOptions = {
             }
           }
         } catch (error) {
-          console.error("Error managing user sheet:", error);
+          console.error("Error al gestionar la hoja de usuarios:", error);
           userRole = (userEmail === 'eabarragang@ingenes.com') ? 'Admin' : 'User';
           userSucursal = (userEmail === 'eabarragang@ingenes.com') ? 'Todas' : 'Desconocida';
         }

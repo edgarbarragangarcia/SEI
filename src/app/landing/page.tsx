@@ -18,24 +18,24 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="relative flex flex-col min-h-screen overflow-hidden bg-black text-white">
+    <div className="relative flex flex-col min-h-screen overflow-hidden bg-white text-gray-900">
       {/* Animated gradient background */}
       <div className="fixed inset-0 -z-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-black to-purple-900/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white to-indigo-50" />
         <div
-          className="absolute w-96 h-96 rounded-full blur-3xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 animate-pulse"
+          className="absolute w-96 h-96 rounded-full blur-3xl bg-gradient-to-r from-cyan-200/40 to-blue-200/30 animate-pulse"
           style={{
             top: `${mousePosition.y - 192}px`,
             left: `${mousePosition.x - 192}px`,
             transition: "top 0.1s ease-out, left 0.1s ease-out",
           }}
         />
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl bg-gradient-to-l from-purple-500/10 to-pink-500/10 animate-pulse" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full blur-3xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 animate-pulse" />
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl bg-gradient-to-l from-purple-200/30 to-pink-200/30 animate-pulse" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full blur-3xl bg-gradient-to-r from-blue-200/30 to-cyan-200/30 animate-pulse" />
       </div>
 
       {/* Grid pattern overlay */}
-      <div className="fixed inset-0 -z-10 opacity-5">
+      <div className="fixed inset-0 -z-10 opacity-20 text-gray-200">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -50,18 +50,7 @@ export default function LandingPage() {
       <header className="relative z-10 container mx-auto px-6 py-8 flex items-center justify-between">
         <Logo variant="default" size="md" showText={true} />
         <nav className="ml-auto flex gap-8 items-center">
-          <Link
-            href="/auth"
-            className="text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors duration-300"
-          >
-            Features
-          </Link>
-          <Link
-            href="/auth"
-            className="text-sm font-medium px-6 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 transition-all duration-300 shadow-lg hover:shadow-cyan-500/50"
-          >
-            Login
-          </Link>
+          {/* Navegación simplificada: enlaces de inicio de sesión removidos */}
         </nav>
       </header>
 
@@ -80,33 +69,25 @@ export default function LandingPage() {
             </div>
 
             {/* Main heading */}
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight space-y-2">
-              <div className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight space-y-2 text-gray-900">
+              <div>
                 Sincroniza tus Hojas
               </div>
-              <div className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              <div>
                 de Google sin Esfuerzo
               </div>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
               Gestiona tu inventario en tiempo real con una interfaz intuitiva y potente. Sincronización automática, segura y confiable.
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
               <Link
-                href="/auth"
-                className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg overflow-hidden transition-all duration-300"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 group-hover:from-cyan-400 group-hover:to-blue-500 transition-all duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 blur-xl opacity-50 group-hover:opacity-100 transition-all duration-300" />
-                <span className="relative text-white">Empezar Ahora</span>
-              </Link>
-              <Link
                 href="#"
-                className="px-8 py-4 text-lg font-semibold rounded-lg border border-cyan-500/50 text-cyan-400 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all duration-300"
+                className="px-8 py-4 text-lg font-semibold rounded-lg border border-cyan-200/60 text-cyan-600 hover:bg-cyan-50 transition-all duration-300"
               >
                 Conocer Más
               </Link>

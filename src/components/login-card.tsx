@@ -21,23 +21,21 @@ export function LoginCard() {
   return (
     <div className="flex items-center justify-center flex-1 w-full p-4">
       <Card className="w-full max-w-sm shadow-xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-headline">Welcome to SheetSync</CardTitle>
+          <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-headline">Bienvenido a SheetSync</CardTitle>
           <CardDescription>
-            Sign in to connect your Google Sheets and view your data instantly.
+            Inicia sesión para conectar tus Hojas de Google y ver tus datos al instante.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              Securely login with your Google account.
+              Inicia sesión de forma segura con tu cuenta de Google.
             </p>
           </div>
         </CardContent>
         <CardFooter>
-          <Button className="w-full" onClick={handleSignIn}>
-            Sign in
-          </Button>
+          {/* Botón de 'Iniciar sesión' removido según solicitud */}
         </CardFooter>
       </Card>
     </div>
