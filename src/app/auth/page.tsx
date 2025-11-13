@@ -22,7 +22,7 @@ export default function AuthForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" className="w-full" onClick={() => signIn('google', { callbackUrl: '/' })}>
+          <Button variant="outline" className="w-full" onClick={() => signIn('google', { callbackUrl: '/dashboard' })}>
             <GoogleIcon className="mr-2 h-4 w-4" />
             Sign in with Google
           </Button>

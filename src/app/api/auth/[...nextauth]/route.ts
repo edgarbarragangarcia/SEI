@@ -72,6 +72,14 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // If the URL starts with /, it's a relative URL so it's safe to return
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs that use the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      // Otherwise, redirect to dashboard after successful login
+      return `${baseUrl}/dashboard`;
+    },
     // Persist tokens to the JWT so server-side APIs can use them
     async jwt({ token, account, user }: { token: any; account: any; user: any }) {
       // Initial sign-in

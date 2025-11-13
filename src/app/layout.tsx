@@ -26,8 +26,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased h-screen overflow-hidden flex flex-col">
         <Providers>
-          <Header />
-          <main className="flex-grow pt-24 overflow-y-auto">
+          <main className="flex-grow overflow-y-auto">
             {children}
           </main>
         </Providers>
