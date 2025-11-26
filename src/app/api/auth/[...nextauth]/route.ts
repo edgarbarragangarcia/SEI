@@ -50,6 +50,9 @@ const sheets = google.sheets({ version: 'v4', auth });
 const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
 
 export const authOptions: NextAuthOptions = {
+  debug: true,
+  // @ts-expect-error: trustHost is a valid option in NextAuth v4 but missing in some type definitions
+  trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
@@ -82,13 +85,13 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {
-        console.log('NextAuth Redirección - URL:', url);
-        console.log('NextAuth Redirección - BaseUrl:', baseUrl);
-        console.log('NextAuth Redirección - variable NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
-      
+      console.log('NextAuth Redirección - URL:', url);
+      console.log('NextAuth Redirección - BaseUrl:', baseUrl);
+      console.log('NextAuth Redirección - variable NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
+
       // Si es una URL relativa, convertirla a absoluta con baseUrl
       if (url.startsWith("/")) return `${baseUrl}${url}`;
-      
+
       // Si el origen de la URL coincide con el baseUrl, permitirla
       try {
         const urlObj = new URL(url);
@@ -97,7 +100,7 @@ export const authOptions: NextAuthOptions = {
       } catch (e) {
         console.error('Error al parsear URLs:', e);
       }
-      
+
       // Redirección por defecto después del inicio de sesión
       return `${baseUrl}/dashboard`;
     },
@@ -110,7 +113,7 @@ export const authOptions: NextAuthOptions = {
           hasRefreshToken: !!account.refresh_token,
           scope: account.scope
         });
-        
+
         return {
           ...token,
           accessToken: account.access_token,
@@ -134,7 +137,7 @@ export const authOptions: NextAuthOptions = {
         // Add the tokens to the session so they're available to the client
         session.accessToken = token.accessToken;
         session.refreshToken = token.refreshToken;
-        
+
         const userEmail = session.user.email;
         const userName = session.user.name;
         const usersSheetName = 'Users';
@@ -214,7 +217,7 @@ export const authOptions: NextAuthOptions = {
           userRole = (userEmail === 'eabarragang@ingenes.com') ? 'Admin' : 'User';
           userSucursal = (userEmail === 'eabarragang@ingenes.com') ? 'Todas' : 'Desconocida';
         }
-        
+
         (session.user as any).role = userRole;
         (session.user as any).sucursal = userSucursal;
         // expose tokens in session on server-side only
