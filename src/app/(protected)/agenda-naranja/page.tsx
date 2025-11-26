@@ -85,7 +85,7 @@ const KanbanCard = ({
         transition-all duration-300 ease-out animate-fadeIn
         ${isDragging ? 'opacity-40 scale-95 rotate-1' : 'opacity-100'} 
         ${isSelected
-          ? 'ring-2 ring-cyan-400 bg-cyan-900/40 border-cyan-400/50 shadow-[0_0_30px_-5px_rgba(34,211,238,0.3)]'
+          ? 'ring-2 ring-cyan-400 bg-white border-cyan-400 shadow-[0_0_30px_-5px_rgba(34,211,238,0.3)]'
           : 'hover:scale-105 hover:-translate-y-1 hover:glow-cyan'
         }`}
       onClick={() => onSelect(patient)}
@@ -186,14 +186,14 @@ const KanbanCard = ({
         </span>
 
         {/* Meet Link */}
-        {(patient.MEET_URL || patient.LINK_MEET || patient.URL_MEET) && (
+        {(patient.URL || patient.MEET_URL || patient.LINK_MEET || patient.URL_MEET) && (
           <>
             <div className="flex items-center gap-1.5 text-green-400/70">
               <Video className="w-3.5 h-3.5" />
               <span className="font-medium">Meet:</span>
             </div>
             <a
-              href={patient.MEET_URL || patient.LINK_MEET || patient.URL_MEET}
+              href={patient.URL || patient.MEET_URL || patient.LINK_MEET || patient.URL_MEET}
               target="_blank"
               rel="noopener noreferrer"
               className="text-cyan-400 truncate text-[11px] hover:text-cyan-300 transition-colors underline"
