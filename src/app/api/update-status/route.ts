@@ -7,7 +7,11 @@ export async function POST(request: Request) {
     const { NHCDEFINITIVO, ESTADO, NOMBRE, APELLIDOP, APELLIDOM, TELEFONO } = body;
 
     if (!NHCDEFINITIVO || !ESTADO) {
-      return NextResponse.json({ message: 'Missing NHCDEFINITIVO or ESTADO' }, { status: 400 });
+      const missingField = !NHCDEFINITIVO ? 'NHCDEFINITIVO' : 'ESTADO';
+      return NextResponse.json({
+        message: `Missing required field: ${missingField}`,
+        error: `The field ${missingField} is required but was not provided in the request`
+      }, { status: 400 });
     }
 
     const n8nWebhookUrl = 'https://n8nqa.ingenes.com:5689/webhook/postSEI';

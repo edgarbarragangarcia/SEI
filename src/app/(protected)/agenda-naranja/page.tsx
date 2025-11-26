@@ -19,27 +19,46 @@ const toTitleCase = (str: string) => {
   return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 };
 
-const KanbanCard = ({ 
-  patient, 
-  isSelected, 
+// Helper function to get patient ID consistently
+const getPatientId = (patient: any): string | number => {
+  return patient.NHC || patient.NHCDEFINITIVO || patient.ID || '';
+};
+
+const KanbanCard = ({
+  patient,
+  isSelected,
   onSelect,
   multiSelectMode
-}: { 
-  patient: any, 
+}: {
+  patient: any,
   isSelected: boolean,
   onSelect: (patient: any) => void,
   multiSelectMode: boolean
 }) => {
+  // Pass only serializable primitive values through drag
+  // Handle both NHC and NHCDEFINITIVO field names
+  const patientId = patient.NHCDEFINITIVO || patient.NHC || patient.nhc;
+
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.CARD,
-    item: { patient },
+    item: {
+      patientId: patientId,
+      nombre: patient.NOMBRE,
+      apellidop: patient.APELLIDOP,
+      apellidom: patient.APELLIDOM,
+      telefono: patient.TELEFONO,
+      estado: patient.ESTADO,
+      sucursal: patient.SUCURSAL,
+      email: patient.EMAIL,
+      fv: patient.FV,
+    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }));
+  }), [patientId, patient.NOMBRE, patient.APELLIDOP, patient.APELLIDOM, patient.TELEFONO, patient.ESTADO, patient.SUCURSAL]);
 
   const formattedName = `${toTitleCase(patient.NOMBRE)} ${toTitleCase(patient.APELLIDOP)} ${toTitleCase(patient.APELLIDOM)}`.trim();
-  
+
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
@@ -89,7 +108,7 @@ const KanbanCard = ({
             </svg>
             <span className="font-bold text-[11px] whitespace-nowrap text-gray-600">NHC:</span>
           </div>
-          <span className="text-[11px] font-mono truncate text-blue-600 font-semibold">{patient.NHCDEFINITIVO}</span>
+          <span className="text-[11px] font-mono truncate text-blue-600 font-semibold">{patient.NHC || patient.NHCDEFINITIVO || patient.ID || 'N/A'}</span>
 
           <div className="flex items-center space-x-1">
             <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -146,17 +165,17 @@ const statusColors: { [key: string]: string } = {
   PROSPECTO: "bg-violet-50 border-violet-200",
 };
 
-const Column = ({ 
-  state, 
-  patients, 
+const Column = ({
+  state,
+  patients,
   onDrop,
   selectedPatients,
   onSelect,
   onMoveSelected,
   multiSelectMode
-}: { 
-  state: string, 
-  patients: any[], 
+}: {
+  state: string,
+  patients: any[],
   onDrop: (p: any, state: string) => void,
   selectedPatients: any[],
   onSelect: (patient: any) => void,
@@ -165,11 +184,29 @@ const Column = ({
 }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.CARD,
-    drop: (item: { patient: any }) => onDrop(item.patient, state),
+    drop: (item: any) => {
+      console.log('Drop received item:', item);
+      console.log('Patient ID:', item.patientId);
+      // Reconstruct patient object from drag data
+      // Use both NHC and NHCDEFINITIVO for compatibility
+      const patient = {
+        NHCDEFINITIVO: item.patientId,
+        NHC: item.patientId, // Also set NHC for compatibility
+        NOMBRE: item.nombre,
+        APELLIDOP: item.apellidop,
+        APELLIDOM: item.apellidom,
+        TELEFONO: item.telefono,
+        ESTADO: item.estado,
+        SUCURSAL: item.sucursal,
+        EMAIL: item.email,
+        FV: item.fv,
+      };
+      return onDrop(patient, state);
+    },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
-  }));
+  }), [state, onDrop]);
 
   const colorClass = statusColors[state] || "bg-gray-50 border-gray-200";
   // Count selected patients for this column case-insensitively so states from the sheet
@@ -177,8 +214,8 @@ const Column = ({
   const selectedCount = selectedPatients.filter(p => p.ESTADO && p.ESTADO.toUpperCase() === state.toUpperCase()).length;
 
   return (
-    <div 
-      ref={drop as unknown as React.Ref<HTMLDivElement>} 
+    <div
+      ref={drop as unknown as React.Ref<HTMLDivElement>}
       className={`w-1/6 min-w-0 p-4 rounded-2xl shadow-lg border ${colorClass} flex flex-col 
         ${isOver ? 'ring-2 ring-blue-400 shadow-xl scale-[1.02] transition-transform duration-200' : 'transition-transform duration-200'}
         backdrop-blur-sm bg-white/50`}
@@ -194,7 +231,7 @@ const Column = ({
             <div className="text-xs text-center text-blue-700 font-medium">
               {selectedCount} paciente{selectedCount !== 1 ? 's' : ''} seleccionado{selectedCount !== 1 ? 's' : ''}
             </div>
-            <select 
+            <select
               className="w-full text-sm p-2 rounded-lg border border-blue-200 bg-white shadow-sm
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               onChange={(e) => {
@@ -215,10 +252,10 @@ const Column = ({
       </div>
       <div className="space-y-3 overflow-y-auto flex-grow pr-1 custom-scrollbar">
         {patients.map((patient, index) => (
-          <KanbanCard 
-            key={index} 
+          <KanbanCard
+            key={index}
             patient={patient}
-            isSelected={selectedPatients.some(p => p.NHCDEFINITIVO === patient.NHCDEFINITIVO)}
+            isSelected={selectedPatients.some(p => getPatientId(p) === getPatientId(patient))}
             onSelect={onSelect}
             multiSelectMode={multiSelectMode}
           />
@@ -322,7 +359,7 @@ const KanbanPage = () => {
           if (userRow && userRow[3]) {  // Column D (index 3) contains branches
             const branchesStr = userRow[3].toString();
             console.log('Raw branches from sheet:', branchesStr);
-            
+
             // Split and normalize all branch names
             const allowed = branchesStr
               .split(/[,;]/)  // Split on comma or semicolon
@@ -347,11 +384,11 @@ const KanbanPage = () => {
                     return branch;
                 }
               });
-            
+
             console.log('Normalized allowed branches:', allowed);
-            
+
             setAllowedBranches(allowed);
-            
+
             if (typeof window !== 'undefined') {
               localStorage.setItem('allowedBranches', JSON.stringify(allowed));
             }
@@ -395,7 +432,7 @@ const KanbanPage = () => {
     console.log('Current filters:', selectedFilters);
     console.log('Current allowed branches:', allowedBranches);
     const { sucursal, estado, fechaInicio, fechaFin, idioma } = selectedFilters;
-    
+
     const filteredPatients = patients.filter(patient => {
       // Handle branch filtering
       const normalizeBranch = (branch: string): string => {
@@ -473,7 +510,7 @@ const KanbanPage = () => {
       if (estado && (!patient.ESTADO || patient.ESTADO.toUpperCase() !== estado.toUpperCase())) {
         return false;
       }
-      
+
       if (fechaInicio || fechaFin) {
         const fv = new Date(patient.FV);
         if (fechaInicio && fv < new Date(fechaInicio)) return false;
@@ -492,7 +529,7 @@ const KanbanPage = () => {
         const detected = normalizeLang(raw);
         if (raw && detected !== idioma) return false;
       }
-      
+
       return true;
     });
 
@@ -505,9 +542,9 @@ const KanbanPage = () => {
 
   const handlePatientSelect = (patient: any) => {
     setSelectedPatients(prev => {
-      const isSelected = prev.some(p => p.NHCDEFINITIVO === patient.NHCDEFINITIVO);
+      const isSelected = prev.some(p => getPatientId(p) === getPatientId(patient));
       if (isSelected) {
-        return prev.filter(p => p.NHCDEFINITIVO !== patient.NHCDEFINITIVO);
+        return prev.filter(p => getPatientId(p) !== getPatientId(patient));
       } else {
         return [...prev, patient];
       }
@@ -515,7 +552,29 @@ const KanbanPage = () => {
   };
 
   const handleMoveSelected = async (targetState: string) => {
-    const patientsToMove = selectedPatients.filter(p => p.ESTADO !== targetState);
+    // Filter out patients without NHCDEFINITIVO
+    const validPatients = selectedPatients.filter(p => p.NHCDEFINITIVO);
+    const invalidCount = selectedPatients.length - validPatients.length;
+
+    if (invalidCount > 0) {
+      console.warn(`Skipping ${invalidCount} patients without NHCDEFINITIVO`);
+      toast({
+        title: 'Advertencia',
+        description: `${invalidCount} paciente(s) sin identificador válido fueron omitidos`,
+        variant: 'destructive',
+      });
+    }
+
+    if (validPatients.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'No hay pacientes válidos para mover',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const patientsToMove = validPatients.filter(p => p.ESTADO !== targetState);
     // If moving selected patients from PROSPECTO -> ATENDIDA, open scheduling modal
     const prosToAttend = patientsToMove.filter(p => (p.ESTADO || '').toString().toUpperCase() === 'PROSPECTO' && targetState.toUpperCase() === 'ATENDIDA');
     if (prosToAttend.length > 0) {
@@ -523,12 +582,14 @@ const KanbanPage = () => {
       setIsScheduleModalOpen(true);
       return;
     }
-    
+
+    // Store original state for rollback on error
+    const originalPatients = patients;
+
     try {
       // 1. Actualización optimista inmediata: mostrar cambios al instante
-      const originalPatients = patients;
-      setPatients(prev => 
-        prev.map(p => 
+      setPatients(prev =>
+        prev.map(p =>
           patientsToMove.some(pm => pm.NHCDEFINITIVO === p.NHCDEFINITIVO)
             ? { ...p, ESTADO: targetState }
             : p
@@ -550,8 +611,17 @@ const KanbanPage = () => {
             APELLIDOM: patient.APELLIDOM,
             TELEFONO: patient.TELEFONO,
           }),
-        }).then(res => {
-          if (!res.ok) throw new Error('Server error');
+        }).then(async res => {
+          if (!res.ok) {
+            let errorMessage = 'Server error';
+            try {
+              const errorData = await res.json();
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+              errorMessage = res.statusText || errorMessage;
+            }
+            throw new Error(errorMessage);
+          }
           return res;
         })
       ));
@@ -567,9 +637,10 @@ const KanbanPage = () => {
       console.error('Failed to move patients:', error);
       // 3. Revertir en caso de error
       setPatients(originalPatients);
+      const errorMessage = error instanceof Error ? error.message : 'No se pudieron mover los pacientes';
       toast({
         title: "Error",
-        description: "No se pudieron mover los pacientes",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -584,7 +655,7 @@ const KanbanPage = () => {
     // perform update and optimistic UI
     setPatients((prevPatients) =>
       prevPatients.map((p) =>
-        p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? { ...p, ESTADO: newState } : p
+        getPatientId(p) === getPatientId(patient) ? { ...p, ESTADO: newState } : p
       )
     );
 
@@ -640,7 +711,7 @@ const KanbanPage = () => {
       );
 
       // Optimistically update local state so cards move to 'ATENDIDA' after submit
-      setPatients(prev => prev.map(p => 
+      setPatients(prev => prev.map(p =>
         patientsToSchedule.some(sp => sp.NHCDEFINITIVO === p.NHCDEFINITIVO)
           ? { ...p, ESTADO: 'ATENDIDA' }
           : p
@@ -702,7 +773,7 @@ const KanbanPage = () => {
       console.log('Calendar result:', calendarResult);
       const meetUrl = calendarResult?.hangoutLink || calendarResult?.htmlLink;
       console.log('Meet URL to save:', meetUrl);
-      
+
       if (meetUrl) {
         const updateMeetUrlPromises = patientsToSchedule.map(async patient => {
           console.log('Updating Meet URL for patient:', patient);
@@ -717,15 +788,15 @@ const KanbanPage = () => {
                 sheetName: 'prueba'
               }),
             });
-            
+
             const responseText = await response.text();
             console.log('Raw response:', responseText);
-            
+
             if (!response.ok) {
               console.error('Failed to update sheet:', responseText);
               throw new Error(responseText || 'Failed to update sheet');
             }
-            
+
             const data = responseText ? JSON.parse(responseText) : {};
             console.log('Sheet update response:', data);
             return data;
@@ -745,9 +816,9 @@ const KanbanPage = () => {
       }
 
       // Show success with Meet link if available
-      toast({ 
-        title: 'Cita Programada', 
-        description: calendarResult?.htmlLink 
+      toast({
+        title: 'Cita Programada',
+        description: calendarResult?.htmlLink
           ? 'La cita ha sido programada. Haz clic para ver el enlace de Google Meet.'
           : 'La cita ha sido programada y los pacientes han sido notificados.',
         action: calendarResult?.htmlLink ? (
@@ -765,15 +836,31 @@ const KanbanPage = () => {
     } catch (error: any) {
       console.error('Error al programar la cita:', error);
       // If calendar creation failed we already moved cards locally; show a descriptive toast
-      toast({ 
-        title: 'Error', 
-        description: error?.message || 'No se pudo programar la cita. Por favor intente de nuevo.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Error',
+        description: error?.message || 'No se pudo programar la cita. Por favor intente de nuevo.',
+        variant: 'destructive'
       });
     }
   };
 
   const handleDrop = async (patient: any, newState: string) => {
+    // Validate patient has required NHC/NHCDEFINITIVO field
+    const patientId = patient.NHCDEFINITIVO || patient.NHC || patient.nhc;
+
+    if (!patientId) {
+      console.error('Patient object is missing NHC/NHCDEFINITIVO:', patient);
+      toast({
+        title: 'Error de validación',
+        description: 'El paciente no tiene un identificador válido (NHC)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log('HandleDrop - Full patient object:', patient);
+    console.log('HandleDrop - Patient ID:', patientId);
+
     // If moving from PROSPECTO -> ATENDIDA require explicit confirmation
     const fromState = (patient.ESTADO || '').toString().toUpperCase();
     const toState = (newState || '').toString().toUpperCase();
@@ -790,7 +877,7 @@ const KanbanPage = () => {
     const updatedPatient = { ...patient, ESTADO: newState };
     setPatients((prevPatients) =>
       prevPatients.map((p) =>
-        p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? updatedPatient : p
+        getPatientId(p) === getPatientId(patient) ? updatedPatient : p
       )
     );
 
@@ -811,7 +898,16 @@ const KanbanPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Server error');
+        // Get the error message from the API response
+        let errorMessage = 'Server error';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       // 2. Toast de éxito
@@ -824,12 +920,13 @@ const KanbanPage = () => {
       // 3. Revertir si hay error
       setPatients((prevPatients) =>
         prevPatients.map((p) =>
-          p.NHCDEFINITIVO === patient.NHCDEFINITIVO ? originalPatient : p
+          getPatientId(p) === getPatientId(patient) ? originalPatient : p
         )
       );
+      const errorMessage = error instanceof Error ? error.message : 'No se pudo actualizar el paciente';
       toast({
         title: 'Error',
-        description: 'No se pudo actualizar el paciente',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -851,9 +948,9 @@ const KanbanPage = () => {
   // Enforce allowedBranches: if the logged-in user has allowed branches, filter displayed patients
   const visiblePatients = allowedBranches && allowedBranches.length > 0
     ? filteredPatients.filter(p => {
-        const s = (p.SUCURSAL || '').toString().trim().toUpperCase();
-        return s && allowedBranches.includes(s);
-      })
+      const s = (p.SUCURSAL || '').toString().trim().toUpperCase();
+      return s && allowedBranches.includes(s);
+    })
     : filteredPatients;
 
   if (loading) {
@@ -926,7 +1023,7 @@ const KanbanPage = () => {
                 onChange={(e) => setSelectedFilters(prev => ({ ...prev, sucursal: e.target.value }))}
               >
                 <option value="">Todas las sucursales</option>
-                {(allowedBranches && allowedBranches.length > 0 ? allowedBranches : Array.from(new Set(patients.map(p => p.SUCURSAL).map((s:any)=> (s||'').toString().toUpperCase())))).map((sucursal:any) => (
+                {(allowedBranches && allowedBranches.length > 0 ? allowedBranches : Array.from(new Set(patients.map(p => p.SUCURSAL).map((s: any) => (s || '').toString().toUpperCase())))).map((sucursal: any) => (
                   <option key={sucursal} value={sucursal}>{sucursal}</option>
                 ))}
               </select>
@@ -1042,10 +1139,10 @@ const KanbanPage = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
-                <Button onClick={saveMessages}>Guardar Mensajes</Button>
-              </CardFooter>
-            </Card>
-          </div>
+                  <Button onClick={saveMessages}>Guardar Mensajes</Button>
+                </CardFooter>
+              </Card>
+            </div>
           </TabsContent>
           <TabsContent value="calendario">
             <div className="flex justify-center">
@@ -1064,7 +1161,7 @@ const KanbanPage = () => {
           <div className="bg-white p-4 rounded-lg shadow-lg flex items-center gap-4">
             <div className="max-w-xs">
               <div className="font-medium">Confirmar cambio</div>
-              <div className="text-sm">¿Mover a <strong>{confirmMove.newState}</strong> al paciente <strong>{toTitleCase((confirmMove.patient?.NOMBRE||'').toString())}</strong>?</div>
+              <div className="text-sm">¿Mover a <strong>{confirmMove.newState}</strong> al paciente <strong>{toTitleCase((confirmMove.patient?.NOMBRE || '').toString())}</strong>?</div>
             </div>
             <div className="flex items-center gap-2">
               <Button onClick={handleAcceptConfirm} disabled={confirmSaving}>{confirmSaving ? 'Guardando...' : 'Aceptar'}</Button>
