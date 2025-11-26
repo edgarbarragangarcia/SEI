@@ -45,13 +45,16 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
+        <Button variant="ghost" className="relative h-10 flex items-center gap-3 px-2 rounded-full hover:bg-accent">
+          <Avatar className="h-10 w-10 ring-2 ring-cyan-500 ring-offset-2 ring-offset-background">
             <AvatarImage src={user.image ?? ""} alt={user.name ?? ""} />
             <AvatarFallback>
               <UserIcon />
             </AvatarFallback>
           </Avatar>
+          <span className="text-sm font-medium hidden sm:inline-block">
+            {user.name}
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -68,9 +71,9 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuLabel className="font-normal text-xs text-muted-foreground flex items-center">
-              <Building className="mr-2 h-3 w-3" />
-              <span>{user.sucursal} ({user.role})</span>
-            </DropdownMenuLabel>
+            <Building className="mr-2 h-3 w-3" />
+            <span>{user.sucursal} ({user.role})</span>
+          </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
