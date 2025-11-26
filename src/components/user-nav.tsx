@@ -46,15 +46,15 @@ export function UserNav() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 flex items-center gap-3 px-2 rounded-full hover:bg-accent">
+          <span className="text-sm font-medium hidden sm:inline-block">
+            {user.name}
+          </span>
           <Avatar className="h-10 w-10 ring-2 ring-cyan-500 ring-offset-2 ring-offset-background">
             <AvatarImage src={user.image ?? ""} alt={user.name ?? ""} />
             <AvatarFallback>
               <UserIcon />
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm font-medium hidden sm:inline-block">
-            {user.name}
-          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
