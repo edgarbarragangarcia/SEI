@@ -78,7 +78,6 @@ const KanbanCard = ({
   const formattedName = `${toTitleCase(patient.NOMBRE)} ${toTitleCase(patient.APELLIDOP)} ${toTitleCase(patient.APELLIDOM)}`.trim();
 
   return (
-  return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
       className={`group relative perspective-1000 min-h-[10rem] cursor-pointer
