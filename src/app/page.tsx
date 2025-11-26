@@ -2,9 +2,9 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { LandingPage } from "@/components/landing-page";
-import { SheetSyncDashboard } from "@/components/sheet-sync-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sheet } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const LoadingState = () => (
   <div className="flex flex-col items-center justify-center flex-1 w-full gap-8 p-4 md:p-8">
@@ -22,6 +22,14 @@ const LoadingState = () => (
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, loading, router]);
 
   // La redirección ahora se maneja en el middleware
   if (loading) {
@@ -31,7 +39,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <main className="flex flex-col items-center flex-1">
-        {!user ? <LandingPage /> : <SheetSyncDashboard />}
+        {!user ? <LandingPage /> : <LoadingState />}
       </main>
     </div>
   );

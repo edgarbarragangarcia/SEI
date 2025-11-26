@@ -56,6 +56,7 @@ const KanbanCard = ({
   // Pass only serializable primitive values through drag
   // Handle both NHC and NHCDEFINITIVO field names
   const patientId = patient.NHCDEFINITIVO || patient.NHC || patient.nhc;
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.CARD,
@@ -80,19 +81,34 @@ const KanbanCard = ({
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`group relative perspective-1000 min-h-[10rem] cursor-pointer
+      className={`group relative min-h-[10rem] cursor-pointer
         transition-all duration-300 ease-out animate-fadeIn
         ${isDragging ? 'opacity-40 scale-95 rotate-1' : 'opacity-100'} 
-        ${isSelected ? 'z-10' : 'z-0'}`}
+        ${isSelected
+          ? 'ring-2 ring-cyan-400/50'
+          : ''
+        }`}
+      style={{ perspective: '1000px' }}
+      onMouseEnter={() => setIsFlipped(true)}
+      onMouseLeave={() => setIsFlipped(false)}
       onClick={() => onSelect(patient)}
     >
-      <div className={`relative w-full h-full transition-all duration-500 transform-style-3d group-hover:rotate-y-180 rounded-xl
-        ${isSelected ? 'ring-2 ring-cyan-400/50 bg-gradient-to-br from-cyan-500/10 to-purple-500/10' : ''}`}>
-
-        {/* Front Face */}
-        <div className={`absolute inset-0 backface-hidden glass-card rounded-xl p-4 flex flex-col h-full
-          ${!isSelected && 'hover:scale-[1.02] hover:-translate-y-1 hover:glow-cyan transition-all duration-300'}`}>
-
+      {/* Flip Container */}
+      <div
+        className={`relative w-full h-full transition-transform duration-500 transform-gpu`}
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+        }}
+      >
+        {/* FRONT SIDE */}
+        <div
+          className="absolute inset-0 glass-card rounded-xl p-4 flex flex-col"
+          style={{
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden'
+          }}
+        >
           {/* Gradient Border Effect */}
           <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10 blur-xl" />
 
@@ -171,13 +187,42 @@ const KanbanCard = ({
               <span className="font-medium">FV:</span>
             </div>
             <span className="text-amber-300/90 truncate font-medium">{patient.FV}</span>
+          </div>
 
+          {/* Hover Glow Effect */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-cyan-500/0 via-purple-500/0 to-cyan-500/0 group-hover:from-cyan-500/5 group-hover:via-purple-500/5 group-hover:to-cyan-500/5 transition-all duration-300 pointer-events-none" />
+        </div>
+
+        {/* BACK SIDE */}
+        <div
+          className="absolute inset-0 glass-card rounded-xl p-4 flex flex-col bg-gradient-to-br from-purple-500/10 to-cyan-500/10"
+          style={{
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)'
+          }}
+        >
+          {/* Gradient Border Effect */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/30 via-cyan-500/30 to-purple-500/30 opacity-100 transition-opacity duration-300 -z-10 blur-xl" />
+
+          {/* Header */}
+          <div className="mb-3 pb-3 border-b border-white/10 flex items-center gap-2">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-cyan-500 flex items-center justify-center">
+              <FileText className="w-4 h-4 text-white" />
+            </div>
+            <h4 className="font-semibold text-sm text-white/90">
+              Detalles Adicionales
+            </h4>
+          </div>
+
+          {/* Additional Info Grid */}
+          <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-2.5 text-xs flex-grow">
             {/* Concepto */}
             <div className="flex items-center gap-1.5 text-blue-400/70">
               <FileText className="w-3.5 h-3.5" />
-              <span className="font-medium">Conc:</span>
+              <span className="font-medium">Concepto:</span>
             </div>
-            <span className="text-white/80 truncate">{patient.CONCEPTO}</span>
+            <span className="text-white/80 truncate">{patient.CONCEPTO || 'N/A'}</span>
 
             {/* Email */}
             <div className="flex items-center gap-1.5 text-pink-400/70">
@@ -187,31 +232,36 @@ const KanbanCard = ({
             <span className="text-white/70 truncate text-[11px] hover:text-cyan-400 transition-colors cursor-pointer">
               {patient.EMAIL || 'N/A'}
             </span>
+
+            {/* Estado */}
+            <div className="flex items-center gap-1.5 text-cyan-400/70">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span className="font-medium">Estado:</span>
+            </div>
+            <span className="text-white/90 font-semibold truncate">{patient.ESTADO}</span>
+
+            {/* URL (if available) */}
+            {patient.URL && (
+              <>
+                <div className="flex items-center gap-1.5 text-green-400/70">
+                  <Video className="w-3.5 h-3.5" />
+                  <span className="font-medium">Meet:</span>
+                </div>
+                <a
+                  href={patient.URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 truncate text-[11px] hover:text-cyan-300 transition-colors underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Abrir Meet
+                </a>
+              </>
+            )}
           </div>
 
           {/* Hover Glow Effect */}
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-cyan-500/0 via-purple-500/0 to-cyan-500/0 group-hover:from-cyan-500/5 group-hover:via-purple-500/5 group-hover:to-cyan-500/5 transition-all duration-300 pointer-events-none" />
-        </div>
-
-        {/* Back Face */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 glass-card rounded-xl p-4 flex flex-col items-center justify-center bg-gray-900/95 border border-cyan-500/30 shadow-xl h-full z-20">
-          <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center mb-3">
-            <Video className="w-6 h-6 text-cyan-400" />
-          </div>
-          <h4 className="text-cyan-400 font-bold mb-2 text-sm">Google Meet</h4>
-          {patient.MEET_URL || patient.LINK_MEET || patient.URL_MEET ? (
-            <a
-              href={patient.MEET_URL || patient.LINK_MEET || patient.URL_MEET}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white hover:text-cyan-400 underline break-all text-center text-xs px-2 py-1 rounded hover:bg-white/5 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Unirse a la reunión
-            </a>
-          ) : (
-            <span className="text-gray-400 text-xs text-center">No hay enlace disponible</span>
-          )}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-purple-500/5 via-cyan-500/5 to-purple-500/5 transition-all duration-300 pointer-events-none" />
         </div>
       </div>
     </div>
@@ -352,7 +402,7 @@ const Column = ({
       </div>
 
       {/* Cards Container */}
-      <div className="space-y-3 overflow-y-auto flex-grow pr-1 custom-scrollbar">
+      <div className="space-y-6 overflow-y-auto flex-grow pr-1 custom-scrollbar">
         {patients.map((patient, index) => (
           <KanbanCard
             key={index}
