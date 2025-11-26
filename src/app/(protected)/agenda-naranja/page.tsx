@@ -22,7 +22,8 @@ import {
   UserX,
   Filter,
   Search,
-  Settings2
+  Settings2,
+  Video
 } from 'lucide-react';
 
 const ItemTypes = {
@@ -77,115 +78,143 @@ const KanbanCard = ({
   const formattedName = `${toTitleCase(patient.NOMBRE)} ${toTitleCase(patient.APELLIDOP)} ${toTitleCase(patient.APELLIDOM)}`.trim();
 
   return (
+  return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`group relative glass-card rounded-xl p-4 min-h-[10rem] flex flex-col cursor-pointer
+      className={`group relative perspective-1000 min-h-[10rem] cursor-pointer
         transition-all duration-300 ease-out animate-fadeIn
         ${isDragging ? 'opacity-40 scale-95 rotate-1' : 'opacity-100'} 
-        ${isSelected
-          ? 'ring-2 ring-cyan-400/50 bg-gradient-to-br from-cyan-500/10 to-purple-500/10'
-          : 'hover:scale-105 hover:-translate-y-1 hover:glow-cyan'
-        }`}
+        ${isSelected ? 'z-10' : 'z-0'}`}
       onClick={() => onSelect(patient)}
     >
-      {/* Gradient Border Effect */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10 blur-xl" />
+      <div className={`relative w-full h-full transition-all duration-500 transform-style-3d group-hover:rotate-y-180 rounded-xl
+        ${isSelected ? 'ring-2 ring-cyan-400/50 bg-gradient-to-br from-cyan-500/10 to-purple-500/10' : ''}`}>
 
-      {/* Header */}
-      <div className="mb-3 pb-3 border-b border-white/10 flex justify-between items-center">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
+        {/* Front Face */}
+        <div className={`absolute inset-0 backface-hidden glass-card rounded-xl p-4 flex flex-col h-full
+          ${!isSelected && 'hover:scale-[1.02] hover:-translate-y-1 hover:glow-cyan transition-all duration-300'}`}>
+
+          {/* Gradient Border Effect */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10 blur-xl" />
+
+          {/* Header */}
+          <div className="mb-3 pb-3 border-b border-white/10 flex justify-between items-center">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm text-white/90 group-hover:text-cyan-400 transition-colors duration-200 truncate">
+                  {formattedName}
+                </h4>
+              </div>
+              {/* Language badge */}
+              {(() => {
+                const rawLang = (patient.IDIOMA || patient.idioma || patient.LENGUAJE || patient.LANGUAGE || '')?.toString() || '';
+                const t = rawLang.toLowerCase();
+                const badge = t.includes('es') || t.includes('esp') || t.includes('españ') || t.includes('spanish') ? 'ES' : (t.includes('en') || t.includes('eng') || t.includes('ingl') || t.includes('english') ? 'EN' : '');
+                return badge ? (
+                  <span className="flex-shrink-0 text-xs font-semibold text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded-md border border-cyan-400/20">
+                    {badge}
+                  </span>
+                ) : null;
+              })()}
+            </div>
+            {multiSelectMode && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect(patient);
+                }}
+                aria-pressed={isSelected}
+                className={`flex-shrink-0 ml-2 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200
+                  ${isSelected
+                    ? 'bg-gradient-to-br from-cyan-400 to-purple-500 border-transparent shadow-lg shadow-cyan-500/50'
+                    : 'bg-white/5 border-white/20 hover:border-cyan-400/50'
+                  }`}
+                title={isSelected ? 'Deselect' : 'Select'}
+              >
+                {isSelected && <CheckCircle2 className="w-5 h-5 text-white" />}
+              </button>
+            )}
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-sm text-white/90 group-hover:text-cyan-400 transition-colors duration-200 truncate">
-              {formattedName}
-            </h4>
+
+          {/* Patient Info Grid */}
+          <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-2.5 text-xs flex-grow">
+            {/* NHC */}
+            <div className="flex items-center gap-1.5 text-cyan-400/70">
+              <User className="w-3.5 h-3.5" />
+              <span className="font-medium">NHC:</span>
+            </div>
+            <span className="font-mono text-white/90 font-semibold truncate">
+              {patient.NHC || patient.NHCDEFINITIVO || patient.ID || 'N/A'}
+            </span>
+
+            {/* Sucursal */}
+            <div className="flex items-center gap-1.5 text-purple-400/70">
+              <Building2 className="w-3.5 h-3.5" />
+              <span className="font-medium">Suc:</span>
+            </div>
+            <span className="text-white/80 truncate">{patient.SUCURSAL}</span>
+
+            {/* Teléfono */}
+            <div className="flex items-center gap-1.5 text-green-400/70">
+              <Phone className="w-3.5 h-3.5" />
+              <span className="font-medium">Tel:</span>
+            </div>
+            <span className="text-white/80 truncate hover:text-cyan-400 transition-colors cursor-pointer">
+              {patient.TELEFONO}
+            </span>
+
+            {/* Fecha Visita */}
+            <div className="flex items-center gap-1.5 text-amber-400/70">
+              <CalendarIcon className="w-3.5 h-3.5" />
+              <span className="font-medium">FV:</span>
+            </div>
+            <span className="text-amber-300/90 truncate font-medium">{patient.FV}</span>
+
+            {/* Concepto */}
+            <div className="flex items-center gap-1.5 text-blue-400/70">
+              <FileText className="w-3.5 h-3.5" />
+              <span className="font-medium">Conc:</span>
+            </div>
+            <span className="text-white/80 truncate">{patient.CONCEPTO}</span>
+
+            {/* Email */}
+            <div className="flex items-center gap-1.5 text-pink-400/70">
+              <Mail className="w-3.5 h-3.5" />
+              <span className="font-medium">Email:</span>
+            </div>
+            <span className="text-white/70 truncate text-[11px] hover:text-cyan-400 transition-colors cursor-pointer">
+              {patient.EMAIL || 'N/A'}
+            </span>
           </div>
-          {/* Language badge */}
-          {(() => {
-            const rawLang = (patient.IDIOMA || patient.idioma || patient.LENGUAJE || patient.LANGUAGE || '')?.toString() || '';
-            const t = rawLang.toLowerCase();
-            const badge = t.includes('es') || t.includes('esp') || t.includes('españ') || t.includes('spanish') ? 'ES' : (t.includes('en') || t.includes('eng') || t.includes('ingl') || t.includes('english') ? 'EN' : '');
-            return badge ? (
-              <span className="flex-shrink-0 text-xs font-semibold text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded-md border border-cyan-400/20">
-                {badge}
-              </span>
-            ) : null;
-          })()}
+
+          {/* Hover Glow Effect */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-cyan-500/0 via-purple-500/0 to-cyan-500/0 group-hover:from-cyan-500/5 group-hover:via-purple-500/5 group-hover:to-cyan-500/5 transition-all duration-300 pointer-events-none" />
         </div>
-        {multiSelectMode && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(patient);
-            }}
-            aria-pressed={isSelected}
-            className={`flex-shrink-0 ml-2 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200
-              ${isSelected
-                ? 'bg-gradient-to-br from-cyan-400 to-purple-500 border-transparent shadow-lg shadow-cyan-500/50'
-                : 'bg-white/5 border-white/20 hover:border-cyan-400/50'
-              }`}
-            title={isSelected ? 'Deselect' : 'Select'}
-          >
-            {isSelected && <CheckCircle2 className="w-5 h-5 text-white" />}
-          </button>
-        )}
+
+        {/* Back Face */}
+        <div className="absolute inset-0 backface-hidden rotate-y-180 glass-card rounded-xl p-4 flex flex-col items-center justify-center bg-gray-900/95 border border-cyan-500/30 shadow-xl h-full z-20">
+          <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center mb-3">
+            <Video className="w-6 h-6 text-cyan-400" />
+          </div>
+          <h4 className="text-cyan-400 font-bold mb-2 text-sm">Google Meet</h4>
+          {patient.MEET_URL || patient.LINK_MEET || patient.URL_MEET ? (
+            <a
+              href={patient.MEET_URL || patient.LINK_MEET || patient.URL_MEET}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:text-cyan-400 underline break-all text-center text-xs px-2 py-1 rounded hover:bg-white/5 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Unirse a la reunión
+            </a>
+          ) : (
+            <span className="text-gray-400 text-xs text-center">No hay enlace disponible</span>
+          )}
+        </div>
       </div>
-
-      {/* Patient Info Grid */}
-      <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-2.5 text-xs flex-grow">
-        {/* NHC */}
-        <div className="flex items-center gap-1.5 text-cyan-400/70">
-          <User className="w-3.5 h-3.5" />
-          <span className="font-medium">NHC:</span>
-        </div>
-        <span className="font-mono text-white/90 font-semibold truncate">
-          {patient.NHC || patient.NHCDEFINITIVO || patient.ID || 'N/A'}
-        </span>
-
-        {/* Sucursal */}
-        <div className="flex items-center gap-1.5 text-purple-400/70">
-          <Building2 className="w-3.5 h-3.5" />
-          <span className="font-medium">Suc:</span>
-        </div>
-        <span className="text-white/80 truncate">{patient.SUCURSAL}</span>
-
-        {/* Teléfono */}
-        <div className="flex items-center gap-1.5 text-green-400/70">
-          <Phone className="w-3.5 h-3.5" />
-          <span className="font-medium">Tel:</span>
-        </div>
-        <span className="text-white/80 truncate hover:text-cyan-400 transition-colors cursor-pointer">
-          {patient.TELEFONO}
-        </span>
-
-        {/* Fecha Visita */}
-        <div className="flex items-center gap-1.5 text-amber-400/70">
-          <CalendarIcon className="w-3.5 h-3.5" />
-          <span className="font-medium">FV:</span>
-        </div>
-        <span className="text-amber-300/90 truncate font-medium">{patient.FV}</span>
-
-        {/* Concepto */}
-        <div className="flex items-center gap-1.5 text-blue-400/70">
-          <FileText className="w-3.5 h-3.5" />
-          <span className="font-medium">Conc:</span>
-        </div>
-        <span className="text-white/80 truncate">{patient.CONCEPTO}</span>
-
-        {/* Email */}
-        <div className="flex items-center gap-1.5 text-pink-400/70">
-          <Mail className="w-3.5 h-3.5" />
-          <span className="font-medium">Email:</span>
-        </div>
-        <span className="text-white/70 truncate text-[11px] hover:text-cyan-400 transition-colors cursor-pointer">
-          {patient.EMAIL || 'N/A'}
-        </span>
-      </div>
-
-      {/* Hover Glow Effect */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-cyan-500/0 via-purple-500/0 to-cyan-500/0 group-hover:from-cyan-500/5 group-hover:via-purple-500/5 group-hover:to-cyan-500/5 transition-all duration-300 pointer-events-none" />
     </div>
   );
 };

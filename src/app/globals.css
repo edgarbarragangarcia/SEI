@@ -17,18 +17,18 @@ body {
     width: 8px;
     height: 8px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.02);
     border-radius: 10px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, #00d4ff 0%, #a855f7 100%);
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, #00e5ff 0%, #b865ff 100%);
     box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
@@ -43,32 +43,32 @@ body {
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
-  
+
   .glass-card {
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 
+    box-shadow:
       0 8px 32px 0 rgba(0, 0, 0, 0.37),
       inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   }
-  
+
   .glass-strong {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.15);
   }
-  
+
   .glow-cyan {
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
   }
-  
+
   .glow-purple {
     box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
   }
-  
+
   .glow-green {
     box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
   }
@@ -77,12 +77,12 @@ body {
   .gradient-border {
     border-image: linear-gradient(135deg, #00d4ff, #a855f7) 1;
   }
-  
+
   .gradient-border-animated {
     position: relative;
     background: rgba(255, 255, 255, 0.03);
   }
-  
+
   .gradient-border-animated::before {
     content: '';
     position: absolute;
@@ -90,24 +90,44 @@ body {
     border-radius: inherit;
     padding: 1px;
     background: linear-gradient(135deg, #00d4ff, #a855f7, #00d4ff);
-    -webkit-mask: 
-      linear-gradient(#fff 0 0) content-box, 
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
-    mask: 
-      linear-gradient(#fff 0 0) content-box, 
+    mask:
+      linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     animation: rotate-gradient 3s linear infinite;
   }
-  
+
   @keyframes rotate-gradient {
     0% {
       filter: hue-rotate(0deg);
     }
+
     100% {
       filter: hue-rotate(360deg);
     }
+  }
+}
+
+/* Flip Card Utilities */
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
   }
 }
 
@@ -117,6 +137,7 @@ body {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -128,6 +149,7 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -139,6 +161,7 @@ body {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -146,9 +169,12 @@ body {
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
   }
@@ -158,15 +184,15 @@ body {
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-out;
   }
-  
+
   .animate-slideUp {
     animation: slideUp 0.4s ease-out;
   }
-  
+
   .animate-scaleIn {
     animation: scaleIn 0.3s ease-out;
   }
-  
+
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
@@ -209,7 +235,7 @@ body {
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 189 100% 50%;
   }
-  
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -250,6 +276,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -257,26 +284,32 @@ body {
 
 /* Typography Improvements */
 @layer base {
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 600;
     letter-spacing: -0.02em;
   }
-  
+
   h1 {
     font-size: 2.25rem;
     line-height: 2.5rem;
   }
-  
+
   h2 {
     font-size: 1.875rem;
     line-height: 2.25rem;
   }
-  
+
   h3 {
     font-size: 1.5rem;
     line-height: 2rem;
   }
-  
+
   h4 {
     font-size: 1.25rem;
     line-height: 1.75rem;
