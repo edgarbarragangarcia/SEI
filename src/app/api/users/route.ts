@@ -15,10 +15,25 @@ const usersSheetName = 'Users';
 
 export async function GET() {
   try {
+    // Check for required environment variables
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SHEETS_ID) {
+      console.error('Missing required environment variables for Google Sheets API');
+      return NextResponse.json({
+        error: 'Configuration Error',
+        details: 'Missing required environment variables',
+        missingVars: {
+          GOOGLE_CLIENT_EMAIL: !process.env.GOOGLE_CLIENT_EMAIL,
+          GOOGLE_PRIVATE_KEY: !process.env.GOOGLE_PRIVATE_KEY,
+          GOOGLE_SHEETS_ID: !process.env.GOOGLE_SHEETS_ID
+        }
+      }, { status: 500 });
+    }
+
     // First verify if we can access the spreadsheet
     try {
       await sheets.spreadsheets.get({ spreadsheetId });
     } catch (error: any) {
+      console.error('Error accessing spreadsheet:', error);
       if (error.code === 403) {
         return NextResponse.json({
           error: 'Permission denied',
@@ -59,7 +74,7 @@ export async function GET() {
       status: error.status,
       spreadsheetId,
       sheetName: usersSheetName,
-      serviceAccount: process.env.GOOGLE_CLIENT_EMAIL
+      serviceAccount: process.env.GOOGLE_CLIENT_EMAIL ? 'Set' : 'Missing'
     };
     return NextResponse.json(errorDetails, { status: 500 });
   }
@@ -120,7 +135,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Users updated successfully',
       updatedCount: users.length
