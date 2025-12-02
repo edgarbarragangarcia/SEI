@@ -791,7 +791,7 @@ const KanbanPage = () => {
     setConfirmMove(null);
   };
 
-  const handleScheduleAppointment = async (appointmentData: { date: Date; time: string; message: string }) => {
+  const handleScheduleAppointment = async (appointmentData: { date: Date; time: string; message: string; title: string }) => {
     try {
       console.log('Scheduling appointment for patients:', patientsToSchedule.map(p => p.NHCDEFINITIVO));
 
@@ -844,7 +844,7 @@ const KanbanPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          summary: `Cita: ${patientsToSchedule.map(p => `${p.NOMBRE} ${p.APELLIDOP}`).join(', ')}`,
+          summary: appointmentData.title,
           description: appointmentData.message,
           start: {
             dateTime: startDt.toISOString(),
@@ -978,12 +978,22 @@ const KanbanPage = () => {
 
     // 1. Actualización optimista inmediata
     const originalPatient = patient;
-    const updatedPatient = { ...patient, ESTADO: newState };
-    setPatients((prevPatients) =>
-      prevPatients.map((p) =>
-        getPatientId(p) === getPatientId(patient) ? updatedPatient : p
-      )
-    );
+    console.log('Optimistic update starting for:', patientId, 'to state:', newState);
+
+    setPatients((prevPatients) => {
+      const updated = prevPatients.map((p) => {
+        const currentId = getPatientId(p);
+        const targetId = getPatientId(patient);
+        const isMatch = String(currentId) === String(targetId);
+
+        if (isMatch) {
+          console.log('Found match in state, updating:', currentId);
+          return { ...p, ESTADO: newState };
+        }
+        return p;
+      });
+      return updated;
+    });
 
     try {
       const response = await fetch('/api/update-status', {

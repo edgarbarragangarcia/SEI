@@ -6,10 +6,13 @@ import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { format, addMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Clock, Calendar as CalendarIcon, MessageSquare, Sparkles, Loader } from 'lucide-react';
+import { Clock, Calendar as CalendarIcon, AlignLeft, X, Sparkles, Loader, MapPin, User, Video, Menu, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface ScheduleAppointmentModalProps {
   isOpen: boolean;
@@ -19,6 +22,7 @@ interface ScheduleAppointmentModalProps {
     date: Date;
     time: string;
     message: string;
+    title: string;
   }) => void;
 }
 
@@ -32,6 +36,7 @@ export function ScheduleAppointmentModal({
   const [time, setTime] = React.useState("");
   const [message, setMessage] = React.useState("");
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [title, setTitle] = React.useState("Consulta Médica");
   const { toast } = useToast();
 
   // Generar horarios disponibles de 9 AM a 6 PM
@@ -44,7 +49,7 @@ export function ScheduleAppointmentModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (date && time && message) {
-      onSchedule({ date, time, message });
+      onSchedule({ date, time, message, title });
       onClose();
     }
   };
@@ -127,117 +132,209 @@ export function ScheduleAppointmentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm border-0 shadow-xl bg-white overflow-hidden p-0">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
-          <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5" />
-            Agendar Cita
-          </DialogTitle>
+      <DialogContent className="max-w-[550px] p-0 gap-0 border-0 shadow-2xl rounded-xl bg-white overflow-hidden">
+        <DialogTitle className="sr-only">Agendar Cita</DialogTitle>
+        {/* Header - GCal style */}
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-100/50 drag-handle cursor-move">
+          <div className="flex items-center gap-4 text-gray-500">
+            <Menu className="w-5 h-5 cursor-pointer hover:bg-gray-200 rounded p-0.5" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8 rounded-full hover:bg-gray-200 text-gray-500"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3 p-5">
-          {/* Fecha */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Fecha</label>
-            <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50 hover:border-blue-400 transition-colors">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                locale={es}
-                className="w-full"
-                classNames={{
-                  months: "w-full",
-                  month: "w-full",
-                  caption: "text-xs font-semibold p-2",
-                  head_row: "grid grid-cols-7 gap-0.5",
-                  head_cell: "text-xs font-medium text-gray-600 text-center",
-                  row: "grid grid-cols-7 gap-0.5 w-full",
-                  cell: "h-7 w-full p-0",
-                  day: "h-7 w-full text-xs p-0 rounded hover:bg-blue-100",
-                  day_selected: "bg-blue-600 text-white",
-                  day_today: "bg-blue-100 font-bold",
-                  day_outside: "text-gray-400",
-                  day_disabled: "text-gray-300",
-                  day_range_middle: "bg-blue-50",
-                  day_hidden: "invisible",
-                  nav: "flex justify-between items-center p-2 gap-1",
-                  nav_button: "h-6 w-6 text-xs hover:bg-gray-200 rounded",
-                  nav_button_previous: "",
-                  nav_button_next: "",
-                }}
-                disabled={(date) => date < new Date()}
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <div className="px-6 pt-2 pb-6 space-y-4">
+
+            {/* Title Input Area */}
+            <div className="ml-[52px]">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Añade un título"
+                className="w-full text-[22px] leading-tight text-gray-800 placeholder:text-gray-400 border-b border-gray-200 focus:border-blue-600 focus:outline-none pb-1 transition-colors bg-transparent"
+              />
+              <div className="flex gap-2 mt-3">
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-md cursor-pointer">Evento</span>
+                <span className="px-3 py-1 hover:bg-gray-100 text-gray-600 text-xs font-medium rounded-md cursor-pointer">Tarea</span>
+                <span className="px-3 py-1 hover:bg-gray-100 text-gray-600 text-xs font-medium rounded-md cursor-pointer">Fuera de la oficina</span>
+              </div>
+            </div>
+
+            {/* Date and Time Section */}
+            <div className="flex gap-5 items-start group">
+              <div className="mt-1 text-gray-500 w-8 flex justify-center">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  {/* Date Picker Popover */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "justify-start text-left font-normal h-8 px-2 hover:bg-gray-100 rounded text-gray-700",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        {date ? format(date, "EEEE, d 'de' MMMM", { locale: es }) : <span>Seleccionar fecha</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                        locale={es}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Time Select */}
+                  <Select value={time} onValueChange={setTime}>
+                    <SelectTrigger className="w-[100px] border-0 bg-transparent hover:bg-gray-100 focus:ring-0 h-8 px-2 text-gray-700 shadow-none data-[placeholder]:text-gray-700">
+                      <SelectValue placeholder="Hora" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTimes.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <span>–</span>
+
+                  {/* End Time (Calculated visually) */}
+                  <span className="text-gray-700 px-2">
+                    {time ? (() => {
+                      const [h, m] = time.split(':').map(Number);
+                      const endDate = new Date();
+                      endDate.setHours(h, m + 30);
+                      return format(endDate, 'HH:mm');
+                    })() : 'Hora'}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-500 px-2">
+                  Zona horaria: Hora estándar de Colombia
+                </div>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="flex gap-5 items-center group">
+              <div className="text-gray-500 w-8 flex justify-center">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <input
+                type="text"
+                placeholder="Añadir ubicación"
+                className="flex-1 text-sm text-gray-700 placeholder:text-gray-500 border-0 focus:ring-0 hover:bg-gray-100 rounded px-2 py-1.5 -ml-2 transition-colors bg-transparent"
               />
             </div>
-          </div>
 
-          {/* Hora */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Hora</label>
-            <Select value={time} onValueChange={setTime}>
-              <SelectTrigger className="border-gray-300 bg-white text-gray-900 rounded-lg h-9 text-sm hover:border-blue-400 transition-colors">
-                <SelectValue placeholder="Selecciona hora" />
-              </SelectTrigger>
-              <SelectContent className="border-gray-300 bg-white text-gray-900">
-                {availableTimes.map((t) => (
-                  <SelectItem key={t} value={t} className="text-sm">
-                    {t} hrs
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Description / Message */}
+            <div className="flex gap-5 items-start group">
+              <div className="mt-1 text-gray-500 w-8 flex justify-center">
+                <AlignLeft className="w-5 h-5" />
+              </div>
+              <div className="flex-1 relative">
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  placeholder="Añadir descripción"
+                  className="resize-none border-0 bg-gray-50/50 focus:bg-gray-100 text-gray-700 placeholder:text-gray-500 rounded-lg text-sm focus:ring-0 p-3 min-h-[100px]"
+                />
 
-          {/* Mensaje */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-gray-700">Mensaje</label>
-              <Button
-                type="button"
-                onClick={generateMessageWithAI}
-                disabled={!date || !time || isGenerating}
-                className="h-6 px-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded flex items-center gap-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader className="w-3 h-3 animate-spin" />
-                    Generando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3 h-3" />
-                    IA
-                  </>
-                )}
-              </Button>
+                {/* AI Button floating inside */}
+                <div className="absolute bottom-2 right-2">
+                  <Button
+                    type="button"
+                    onClick={generateMessageWithAI}
+                    disabled={!date || !time || isGenerating}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-full"
+                  >
+                    {isGenerating ? (
+                      <Loader className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-              placeholder="Mensaje al paciente..."
-              className="resize-none border-gray-300 bg-gray-50 text-gray-900 placeholder-gray-500 rounded-lg text-sm hover:border-blue-400 transition-colors"
-            />
+
+            {/* Patient Info (Guests) */}
+            <div className="flex gap-5 items-start group">
+              <div className="mt-1 text-gray-500 w-8 flex justify-center">
+                <User className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-700 px-2 py-1 -ml-2 font-medium">
+                  {patients.length + 1} invitados
+                </div>
+
+                {/* Organizer (Hardcoded as requested) */}
+                <div className="flex items-center gap-2 mt-1 px-2 -ml-2 hover:bg-gray-100 rounded py-1 cursor-pointer">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px]">EB</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-700">Edgar Alexander Barragan Garcia</span>
+                    <span className="text-xs text-gray-500">Organizador</span>
+                  </div>
+                </div>
+
+                {/* Patients (Guests) */}
+                {patients.map((patient, idx) => (
+                  <div key={idx} className="flex items-center gap-2 mt-1 px-2 -ml-2 hover:bg-gray-100 rounded py-1 cursor-pointer">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.email || 'default'}`} />
+                      <AvatarFallback>{(patient.name || "P").substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-700">{patient.name || "Sin nombre"}</span>
+                      <span className="text-xs text-gray-500">Invitado</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
 
-          {/* Botones */}
-          <DialogFooter className="flex gap-2 pt-2">
-            <Button 
-              type="button" 
-              onClick={onClose}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg h-9 text-sm font-medium transition-colors"
+          {/* Footer */}
+          <div className="flex justify-between items-center p-4 pt-2 border-t border-gray-100 mt-auto">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-blue-600 hover:bg-blue-50 font-medium text-sm"
             >
-              Cancelar
+              Más opciones
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!date || !time || !message}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg h-9 text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 rounded shadow-sm"
             >
-              Agendar
+              Guardar
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

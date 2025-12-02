@@ -93,7 +93,7 @@ export default function KanbanBoard() {
             } else if (user.role !== 'Admin' && user.sucursal) {
               filteredRows = rows.filter((p: any) => p[sucursalHeader]?.trim().toLowerCase() === user.sucursal?.toLowerCase());
             }
-            
+
             setPatients(filteredRows);
           } else {
             setPatients([]);
@@ -148,12 +148,12 @@ export default function KanbanBoard() {
     }
   };
 
-  const handleScheduleAppointment = async (appointmentData: { date: Date; time: string; message: string }) => {
+  const handleScheduleAppointment = async (appointmentData: { date: Date; time: string; message: string; title: string }) => {
     try {
       // Optimistic update: actualizar UI inmediatamente
       const updatedPatients = selectedPatients.map(p => ({ ...p, estado: 'ATENDIDA' }));
-      setPatients(prev => prev.map(p => 
-        updatedPatients.some(up => up.originalIndex === p.originalIndex) 
+      setPatients(prev => prev.map(p =>
+        updatedPatients.some(up => up.originalIndex === p.originalIndex)
           ? updatedPatients.find(up => up.originalIndex === p.originalIndex)!
           : p
       ));
@@ -176,16 +176,14 @@ export default function KanbanBoard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          summary: `Cita: ${selectedPatients.map(p => `${p.nombre} ${p.apellidop}`).join(', ')}`,
+          summary: appointmentData.title,
           description: appointmentData.message,
           start: {
             dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${appointmentData.time}:00`,
             timeZone: 'America/Mexico_City',
           },
           end: {
-            dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${
-              appointmentData.time.split(':')[0]}:${
-              (parseInt(appointmentData.time.split(':')[1]) + 30).toString().padStart(2, '0')}:00`,
+            dateTime: `${appointmentData.date.toISOString().split('T')[0]}T${appointmentData.time.split(':')[0]}:${(parseInt(appointmentData.time.split(':')[1]) + 30).toString().padStart(2, '0')}:00`,
             timeZone: 'America/Mexico_City',
           },
           attendees: selectedPatients.map(p => ({ email: p.email })),
@@ -196,21 +194,21 @@ export default function KanbanBoard() {
       setSelectedPatients([]);
       setIsScheduleModalOpen(false);
 
-      toast({ 
-        title: 'Éxito', 
-        description: 'La cita ha sido programada y los pacientes han sido notificados.' 
+      toast({
+        title: 'Éxito',
+        description: 'La cita ha sido programada y los pacientes han sido notificados.'
       });
     } catch (error) {
       // Revertir cambios si falla
-      setPatients(prev => prev.map(p => 
+      setPatients(prev => prev.map(p =>
         selectedPatients.some(sp => sp.originalIndex === p.originalIndex)
           ? selectedPatients.find(sp => sp.originalIndex === p.originalIndex)!
           : p
       ));
-      toast({ 
-        title: 'Error', 
-        description: 'No se pudo programar la cita. Por favor intente de nuevo.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Error',
+        description: 'No se pudo programar la cita. Por favor intente de nuevo.',
+        variant: 'destructive'
       });
     }
   };
@@ -219,8 +217,8 @@ export default function KanbanBoard() {
     return (
       <>
         <Header />
-        <div className="flex items-center justify-center" style={{height: 'calc(100vh - 4rem)'}}>
-            <p>Cargando datos...</p>
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 4rem)' }}>
+          <p>Cargando datos...</p>
         </div>
       </>
     );
@@ -230,7 +228,7 @@ export default function KanbanBoard() {
     <>
       <Header />
       <DndProvider backend={HTML5Backend}>
-        <div className="flex p-4 space-x-4 bg-gray-50" style={{height: 'calc(100vh - 4rem)'}}>
+        <div className="flex p-4 space-x-4 bg-gray-50" style={{ height: 'calc(100vh - 4rem)' }}>
           {states.map(state => (
             <Column
               key={state}
