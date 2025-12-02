@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
     if (!accessToken) {
       console.error('No access token found in session');
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'No se encontró el token de acceso en la sesión. Por favor, cierre sesión y vuelva a iniciar sesión.',
         details: 'missing_access_token'
       }, { status: 403 });
@@ -49,13 +49,26 @@ export async function POST(req: Request) {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
+    // Log attendees to verify they're being passed correctly
+    console.log('Creating event with attendees:', attendees);
+
+    // Ensure attendees have the correct format and valid emails
+    const validAttendees = (attendees || [])
+      .filter((a: any) => a.email && a.email.includes('@'))
+      .map((a: any) => ({
+        email: a.email,
+        responseStatus: 'needsAction', // Explicitly mark as needing a response
+      }));
+
+    console.log('Valid attendees after filtering:', validAttendees);
+
     // Crear el evento con Google Meet (conferenceData)
     const event: any = {
       summary,
       description,
       start,
       end,
-      attendees,
+      attendees: validAttendees,
       conferenceData: {
         createRequest: {
           requestId: `meet-${Date.now()}`,
@@ -65,10 +78,14 @@ export async function POST(req: Request) {
       reminders: {
         useDefault: false,
         overrides: [
-          { method: 'email', minutes: 24 * 60 },
-          { method: 'popup', minutes: 30 },
+          { method: 'email', minutes: 24 * 60 }, // Email reminder 24 hours before
+          { method: 'popup', minutes: 30 },      // Popup reminder 30 minutes before
         ],
       },
+      // Explicitly request email notifications
+      guestsCanInviteOthers: false,
+      guestsCanModify: false,
+      guestsCanSeeOtherGuests: true,
     };
 
     const calendarId = 'primary';
@@ -76,18 +93,25 @@ export async function POST(req: Request) {
     // Try to insert the event. If it fails due to an expired access token, try refreshing
     // using the refresh token and retry once.
     try {
+      console.log('Inserting calendar event with sendUpdates: all');
       const response = await calendar.events.insert({
         calendarId,
         requestBody: event,
         conferenceDataVersion: 1,
-        sendUpdates: 'all',
+        sendUpdates: 'all', // CRITICAL: This sends email invitations to all attendees
       });
 
-      return NextResponse.json({ 
-        success: true, 
+      console.log('Event created successfully:', {
         eventId: response.data.id,
         htmlLink: response.data.htmlLink,
-        hangoutLink: response.data.hangoutLink 
+        attendeesCount: validAttendees.length
+      });
+
+      return NextResponse.json({
+        success: true,
+        eventId: response.data.id,
+        htmlLink: response.data.htmlLink,
+        hangoutLink: response.data.hangoutLink
       });
     } catch (err: any) {
       console.error('Initial calendar insert failed:', err?.message || err);
@@ -108,15 +132,21 @@ export async function POST(req: Request) {
           }
 
           // Retry the insert once
+          console.log('Retrying event insertion with sendUpdates: all');
           const retryResponse = await calendar.events.insert({
             calendarId,
             requestBody: event,
             conferenceDataVersion: 1,
-            sendUpdates: 'all',
+            sendUpdates: 'all', // Ensure emails are sent on retry as well
           });
 
-          return NextResponse.json({ 
-            success: true, 
+          console.log('Event created successfully on retry:', {
+            eventId: retryResponse.data.id,
+            htmlLink: retryResponse.data.htmlLink
+          });
+
+          return NextResponse.json({
+            success: true,
             eventId: retryResponse.data.id,
             htmlLink: retryResponse.data.htmlLink,
             hangoutLink: retryResponse.data.hangoutLink

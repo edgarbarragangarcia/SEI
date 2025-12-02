@@ -62,6 +62,9 @@ const KanbanCard = ({
     type: ItemTypes.CARD,
     item: {
       patientId: patientId,
+      id: patient.ID, // Include ID field as well
+      nhc: patient.NHC,
+      nhcdefinitivo: patient.NHCDEFINITIVO,
       nombre: patient.NOMBRE,
       apellidop: patient.APELLIDOP,
       apellidom: patient.APELLIDOM,
@@ -74,7 +77,7 @@ const KanbanCard = ({
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }), [patientId, patient.NOMBRE, patient.APELLIDOP, patient.APELLIDOM, patient.TELEFONO, patient.ESTADO, patient.SUCURSAL]);
+  }), [patientId, patient.ID, patient.NHC, patient.NHCDEFINITIVO, patient.NOMBRE, patient.APELLIDOP, patient.APELLIDOM, patient.TELEFONO, patient.ESTADO, patient.SUCURSAL]);
 
   const formattedName = `${toTitleCase(patient.NOMBRE)} ${toTitleCase(patient.APELLIDOP)} ${toTitleCase(patient.APELLIDOM)}`.trim();
 
@@ -255,12 +258,15 @@ const Column = ({
     accept: ItemTypes.CARD,
     drop: (item: any) => {
       console.log('Drop received item:', item);
-      console.log('Patient ID:', item.patientId);
+      console.log('Patient ID from drag:', item.patientId);
+      console.log('All ID fields:', { id: item.id, nhc: item.nhc, nhcdefinitivo: item.nhcdefinitivo });
+
       // Reconstruct patient object from drag data
-      // Use both NHC and NHCDEFINITIVO for compatibility
+      // Include ALL possible ID fields for proper matching
       const patient = {
-        NHCDEFINITIVO: item.patientId,
-        NHC: item.patientId, // Also set NHC for compatibility
+        ID: item.id || item.patientId,
+        NHC: item.nhc || item.patientId,
+        NHCDEFINITIVO: item.nhcdefinitivo || item.patientId,
         NOMBRE: item.nombre,
         APELLIDOP: item.apellidop,
         APELLIDOM: item.apellidom,
@@ -270,6 +276,8 @@ const Column = ({
         EMAIL: item.email,
         FV: item.fv,
       };
+
+      console.log('Reconstructed patient for drop:', patient);
       return onDrop(patient, state);
     },
     collect: (monitor) => ({
@@ -815,11 +823,26 @@ const KanbanPage = () => {
       );
 
       // Optimistically update local state so cards move to 'ATENDIDA' after submit
-      setPatients(prev => prev.map(p =>
-        patientsToSchedule.some(sp => sp.NHCDEFINITIVO === p.NHCDEFINITIVO)
-          ? { ...p, ESTADO: 'ATENDIDA' }
-          : p
-      ));
+      console.log('Optimistic update: Moving patients to ATENDIDA', patientsToSchedule.map(p => getPatientId(p)));
+
+      setPatients(prev => {
+        const updated = prev.map(p => {
+          const shouldUpdate = patientsToSchedule.some(sp => {
+            const spId = getPatientId(sp);
+            const pId = getPatientId(p);
+            const match = String(spId) === String(pId);
+            if (match) {
+              console.log('Match found for patient:', spId, '- updating to ATENDIDA');
+            }
+            return match;
+          });
+
+          return shouldUpdate ? { ...p, ESTADO: 'ATENDIDA' } : p;
+        });
+
+        console.log('State updated, patients now:', updated.filter(p => p.ESTADO === 'ATENDIDA').length, 'in ATENDIDA');
+        return updated;
+      });
 
       // Await sheet updates but don't block calendar creation on individual failures
       try {
@@ -839,6 +862,13 @@ const KanbanPage = () => {
       const startDt = new Date(appointmentData.date);
       startDt.setHours(hourNum, minuteNum, 0, 0);
       const endDt = new Date(startDt.getTime() + 30 * 60 * 1000);
+
+      const attendeeEmails = patientsToSchedule.map(p => p.EMAIL);
+      console.log('Sending calendar invite to emails:', attendeeEmails);
+      console.log('Patients to schedule:', patientsToSchedule.map(p => ({
+        name: `${p.NOMBRE} ${p.APELLIDOP}`,
+        email: p.EMAIL
+      })));
 
       const calendarResponse = await fetch('/api/calendar/create', {
         method: 'POST',

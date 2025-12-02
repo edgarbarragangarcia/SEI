@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
 import { Textarea } from './ui/textarea';
@@ -134,6 +134,9 @@ export function ScheduleAppointmentModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[550px] p-0 gap-0 border-0 shadow-2xl rounded-xl bg-white overflow-hidden">
         <DialogTitle className="sr-only">Agendar Cita</DialogTitle>
+        <DialogDescription className="sr-only">
+          Formulario para programar una cita médica con fecha, hora y detalles de la consulta.
+        </DialogDescription>
         {/* Header - GCal style */}
         <div className="flex items-center justify-between px-4 py-2 bg-gray-100/50 drag-handle cursor-move">
           <div className="flex items-center gap-4 text-gray-500">
