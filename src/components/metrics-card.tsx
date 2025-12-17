@@ -118,16 +118,16 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({ title, value, change, 
 
   return (
     <motion.div whileHover={{ y: -5, scale: 1.01 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="w-full">
-      <Card className={cn('h-full transition-all bg-[#0f0f23]/60 border border-white/5 backdrop-blur-xl rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:border-white/10 group') as string}>
+      <Card className={cn('h-full transition-all bg-white/80 dark:bg-[#0f0f23]/60 border border-slate-200/50 dark:border-white/5 backdrop-blur-xl rounded-2xl overflow-hidden shadow-sm dark:shadow-lg hover:shadow-md dark:hover:shadow-2xl hover:border-slate-300 dark:hover:border-white/10 group') as string}>
         <div className="relative h-full">
           {/* top accent gradient */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r opacity-70" style={{ background: `linear-gradient(90deg, ${theme.hex}, transparent)` }} />
 
           {/* background glow */}
-          <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-3xl" style={{ background: theme.hex }} />
+          <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-0 group-hover:opacity-5 transition-opacity duration-700 blur-3xl" style={{ background: theme.hex }} />
 
           <CardHeader className="pb-2 pl-6 pt-5 relative z-10">
-            <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+            <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
               <div className={`w-1.5 h-1.5 rounded-full ${theme.bg.replace('/10', '')}`} style={{ backgroundColor: theme.hex }}></div>
               {title}
             </CardTitle>
@@ -136,20 +136,20 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({ title, value, change, 
             <div className="space-y-4">
               <div className="flex items-end justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-white tracking-tight">
+                  <div className="text-3xl font-bold text-foreground tracking-tight">
                     {value}
                   </div>
                   {change && (
                     <div className={cn(
                       "text-xs mt-1.5 font-medium flex items-center gap-1.5",
-                      change.startsWith('+') || (change.startsWith('-') && !change.startsWith('-2')) ? "text-emerald-400" : "text-red-400"
+                      change.startsWith('+') || (change.startsWith('-') && !change.startsWith('-2')) ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"
                     )}>
                       <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
-                        change.startsWith('+') ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
+                        change.startsWith('+') ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
                       )}>
                         {change.startsWith('+') ? '↑' : '↓'} {change.replace(/^[+-]/, '')}
                       </span>
-                      <span className="text-gray-500">vs mes anterior</span>
+                      <span className="text-muted-foreground">vs mes anterior</span>
                     </div>
                   )}
                 </div>
@@ -162,7 +162,7 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({ title, value, change, 
               </div>
 
               {description && (
-                <div className="text-[11px] text-gray-500 border-t border-white/5 pt-3 mt-1">
+                <div className="text-[11px] text-muted-foreground border-t border-slate-100 dark:border-white/5 pt-3 mt-1">
                   {description}
                 </div>
               )}
