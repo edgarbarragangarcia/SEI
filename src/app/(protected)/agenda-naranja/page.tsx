@@ -319,11 +319,11 @@ const Column = ({
       {/* Header */}
       <div className="mb-4 relative z-10">
         <div className="flex items-center justify-center mb-3">
-          <div className="glass-strong px-4 py-2 rounded-xl flex items-center gap-2 border border-white/20">
+          <div className="glass-strong px-4 py-2 rounded-xl flex items-center gap-2 border border-border/50">
             <div className="text-cyan-400">
               {getStatusIcon()}
             </div>
-            <h3 className="font-bold text-sm uppercase tracking-wide text-white/90">
+            <h3 className="font-bold text-sm uppercase tracking-wide text-foreground">
               {state}
             </h3>
             <div className="flex items-center justify-center min-w-[2rem] h-6 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 px-2">
@@ -1127,21 +1127,21 @@ const KanbanPage = () => {
               <TabsList className="glass-strong p-1.5 rounded-xl border border-white/10">
                 <TabsTrigger
                   value="kanban"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-200 px-6 text-white/70 hover:text-white/90"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-200 px-6 text-muted-foreground hover:text-foreground"
                 >
                   <Filter className="w-4 h-4 mr-2" />
                   Kanban
                 </TabsTrigger>
                 <TabsTrigger
                   value="mensajes"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-200 px-6 text-white/70 hover:text-white/90"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-200 px-6 text-muted-foreground hover:text-foreground"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Mensajes
                 </TabsTrigger>
                 <TabsTrigger
                   value="calendario"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-200 px-6 text-white/70 hover:text-white/90"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg transition-all duration-200 px-6 text-muted-foreground hover:text-foreground"
                 >
                   <CalendarIcon className="w-4 h-4 mr-2" />
                   Calendario
@@ -1153,7 +1153,7 @@ const KanbanPage = () => {
                 <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-400/70" />
                 <input
                   placeholder="Buscar paciente..."
-                  className="w-full pl-12 pr-4 py-3 glass rounded-xl border border-white/20 text-white/90 placeholder-white/50
+                  className="w-full pl-12 pr-4 py-3 glass rounded-xl border border-border text-foreground placeholder:text-muted-foreground
                     focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200
                     hover:border-cyan-400/50"
                   value={searchTerm}
@@ -1169,60 +1169,60 @@ const KanbanPage = () => {
             <div className="glass-card p-4 rounded-2xl border border-white/10">
               <div className="flex gap-3 items-center flex-wrap">
                 <select
-                  className="px-4 py-2.5 glass rounded-xl border border-white/20 text-white/90 text-sm
+                  className="px-4 py-2.5 glass rounded-xl border border-border text-foreground text-sm
                     focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200
-                    hover:border-cyan-400/50 cursor-pointer bg-white/5"
+                    hover:border-cyan-400/50 cursor-pointer bg-background/50"
                   value={selectedFilters.sucursal}
                   onChange={(e) => setSelectedFilters(prev => ({ ...prev, sucursal: e.target.value }))}
                 >
-                  <option value="" className="bg-gray-900">Todas las sucursales</option>
+                  <option value="" className="bg-background text-foreground">Todas las sucursales</option>
                   {allowedBranches.map(b => (
-                    <option key={b} value={b} className="bg-gray-900">{b}</option>
+                    <option key={b} value={b} className="bg-background text-foreground">{b}</option>
                   ))}
                 </select>
                 <select
-                  className="px-4 py-2.5 glass rounded-xl border border-white/20 text-white/90 text-sm
+                  className="px-4 py-2.5 glass rounded-xl border border-border text-foreground text-sm
                     focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200
-                    hover:border-cyan-400/50 cursor-pointer bg-white/5"
+                    hover:border-cyan-400/50 cursor-pointer bg-background/50"
                   value={selectedFilters.estado}
                   onChange={(e) => setSelectedFilters(prev => ({ ...prev, estado: e.target.value }))}
                 >
-                  <option value="" className="bg-gray-900">Todos los estados</option>
+                  <option value="" className="bg-background text-foreground">Todos los estados</option>
                   {states.map(s => (
-                    <option key={s} value={s} className="bg-gray-900">{s}</option>
+                    <option key={s} value={s} className="bg-background text-foreground">{s}</option>
                   ))}
                 </select>
                 <select
-                  className="px-4 py-2.5 glass rounded-xl border border-white/20 text-white/90 text-sm
+                  className="px-4 py-2.5 glass rounded-xl border border-border text-foreground text-sm
                     focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200
-                    hover:border-cyan-400/50 cursor-pointer bg-white/5"
+                    hover:border-cyan-400/50 cursor-pointer bg-background/50"
                   value={selectedFilters.idioma}
                   onChange={(e) => setSelectedFilters(prev => ({ ...prev, idioma: e.target.value }))}
                 >
-                  <option value="" className="bg-gray-900">Idioma (Todos)</option>
-                  <option value="es" className="bg-gray-900">Español</option>
-                  <option value="en" className="bg-gray-900">English</option>
+                  <option value="" className="bg-background text-foreground">Idioma (Todos)</option>
+                  <option value="es" className="bg-background text-foreground">Español</option>
+                  <option value="en" className="bg-background text-foreground">English</option>
                 </select>
                 <div className="flex gap-2 items-center">
                   <div className="relative">
                     <CalendarIcon className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400/70" />
                     <input
                       type="date"
-                      className="pl-10 pr-3 py-2.5 glass rounded-xl border border-white/20 text-white/90 text-sm
+                      className="pl-10 pr-3 py-2.5 glass rounded-xl border border-border text-foreground text-sm
                         focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200
-                        hover:border-cyan-400/50 cursor-pointer bg-white/5"
+                        hover:border-cyan-400/50 cursor-pointer bg-background/50"
                       value={selectedFilters.fechaInicio}
                       onChange={(e) => setSelectedFilters(prev => ({ ...prev, fechaInicio: e.target.value }))}
                     />
                   </div>
-                  <span className="text-white/50 text-sm">hasta</span>
+                  <span className="text-muted-foreground text-sm">hasta</span>
                   <div className="relative">
                     <CalendarIcon className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400/70" />
                     <input
                       type="date"
-                      className="pl-10 pr-3 py-2.5 glass rounded-xl border border-white/20 text-white/90 text-sm
+                      className="pl-10 pr-3 py-2.5 glass rounded-xl border border-border text-foreground text-sm
                         focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200
-                        hover:border-cyan-400/50 cursor-pointer bg-white/5"
+                        hover:border-cyan-400/50 cursor-pointer bg-background/50"
                       value={selectedFilters.fechaFin}
                       onChange={(e) => setSelectedFilters(prev => ({ ...prev, fechaFin: e.target.value }))}
                     />
