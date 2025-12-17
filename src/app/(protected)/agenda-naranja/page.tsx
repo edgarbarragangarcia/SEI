@@ -84,11 +84,11 @@ const KanbanCard = ({
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`group relative glass-card rounded-xl p-4 min-h-[15rem] flex flex-col cursor-pointer border border-white/10
+      className={`group relative glass-card rounded-xl p-4 min-h-[15rem] flex flex-col cursor-pointer border border-border/50
         transition-all duration-300 ease-out animate-fadeIn
         ${isDragging ? 'opacity-40 scale-95 rotate-1' : 'opacity-100'} 
         ${isSelected
-          ? 'ring-2 ring-cyan-400 bg-white border-cyan-400 shadow-[0_0_30px_-5px_rgba(34,211,238,0.3)]'
+          ? 'ring-2 ring-cyan-400 bg-background border-cyan-400 shadow-[0_0_30px_-5px_rgba(34,211,238,0.3)]'
           : 'hover:scale-105 hover:-translate-y-1 hover:glow-cyan'
         }`}
       onClick={() => onSelect(patient)}
@@ -106,13 +106,13 @@ const KanbanCard = ({
       )}
 
       {/* Header */}
-      <div className="mb-3 pb-3 border-b border-white/10 flex justify-between items-center">
+      <div className="mb-3 pb-3 border-b border-border/50 flex justify-between items-center">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <User className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-sm text-white group-hover:text-cyan-400 transition-colors duration-200 truncate">
+            <h4 className="font-bold text-sm text-foreground group-hover:text-cyan-400 transition-colors duration-200 truncate">
               {formattedName}
             </h4>
           </div>
@@ -154,7 +154,7 @@ const KanbanCard = ({
           <User className="w-3.5 h-3.5" />
           <span className="font-medium">NHC:</span>
         </div>
-        <span className="font-mono text-white/90 font-semibold truncate">
+        <span className="font-mono text-foreground/90 font-semibold truncate">
           {patient.NHC || patient.NHCDEFINITIVO || patient.ID || 'N/A'}
         </span>
 
@@ -163,14 +163,14 @@ const KanbanCard = ({
           <Building2 className="w-3.5 h-3.5" />
           <span className="font-medium">Suc:</span>
         </div>
-        <span className="text-white/80 truncate">{patient.SUCURSAL}</span>
+        <span className="text-foreground/80 truncate">{patient.SUCURSAL}</span>
 
         {/* Teléfono */}
         <div className="flex items-center gap-1.5 text-green-400/70">
           <Phone className="w-3.5 h-3.5" />
           <span className="font-medium">Tel:</span>
         </div>
-        <span className="text-white/80 truncate hover:text-cyan-400 transition-colors cursor-pointer">
+        <span className="text-foreground/80 truncate hover:text-cyan-400 transition-colors cursor-pointer">
           {patient.TELEFONO}
         </span>
 
@@ -179,21 +179,21 @@ const KanbanCard = ({
           <CalendarIcon className="w-3.5 h-3.5" />
           <span className="font-medium">FV:</span>
         </div>
-        <span className="text-amber-300/90 truncate font-medium">{patient.FV}</span>
+        <span className="text-amber-500/90 truncate font-medium">{patient.FV}</span>
 
         {/* Concepto */}
         <div className="flex items-center gap-1.5 text-blue-400/70">
           <FileText className="w-3.5 h-3.5" />
           <span className="font-medium">Conc:</span>
         </div>
-        <span className="text-white/80 truncate">{patient.CONCEPTO}</span>
+        <span className="text-foreground/80 truncate">{patient.CONCEPTO}</span>
 
         {/* Email */}
         <div className="flex items-center gap-1.5 text-pink-400/70">
           <Mail className="w-3.5 h-3.5" />
           <span className="font-medium">Email:</span>
         </div>
-        <span className="text-white/70 truncate text-[11px] hover:text-cyan-400 transition-colors cursor-pointer">
+        <span className="text-foreground/70 truncate text-[11px] hover:text-cyan-400 transition-colors cursor-pointer">
           {patient.EMAIL || 'N/A'}
         </span>
 

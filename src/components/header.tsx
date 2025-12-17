@@ -6,6 +6,7 @@ import { Sheet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -46,7 +47,8 @@ export function Header() {
               </Link>
             </nav>
 
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end gap-2">
+              <ThemeToggle />
               <UserNav />
             </div>
           </header>
