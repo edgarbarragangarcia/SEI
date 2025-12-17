@@ -337,12 +337,12 @@ const Column = ({
         {/* Multi-select Panel */}
         {selectedCount > 0 && (
           <div className="mt-2 animate-scaleIn">
-            <div className="glass-strong p-1.5 rounded-lg border border-cyan-400/30 flex items-center gap-2 bg-cyan-900/20">
+            <div className="glass-strong p-1.5 rounded-lg border border-border/50 flex items-center gap-2">
               <div className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500 text-white shadow-sm flex-shrink-0">
                 <span className="text-[10px] font-bold">{selectedCount}</span>
               </div>
               <select
-                className="flex-1 text-xs py-1 px-1 rounded bg-transparent text-cyan-100 border-none focus:ring-0 cursor-pointer hover:text-white transition-colors"
+                className="flex-1 text-xs py-1 px-1 rounded bg-transparent text-muted-foreground border-none focus:ring-0 cursor-pointer hover:text-foreground transition-colors"
                 onChange={(e) => {
                   if (e.target.value) {
                     onMoveSelected(e.target.value);
@@ -351,9 +351,9 @@ const Column = ({
                 }}
                 value=""
               >
-                <option value="" className="bg-gray-900 text-white">Mover a...</option>
+                <option value="" className="bg-background text-foreground">Mover a...</option>
                 {states.filter(s => s !== state).map(s => (
-                  <option key={s} value={s} className="bg-gray-900 text-white">{s}</option>
+                  <option key={s} value={s} className="bg-background text-foreground">{s}</option>
                 ))}
               </select>
             </div>
